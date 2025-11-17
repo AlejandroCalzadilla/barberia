@@ -38,7 +38,7 @@ function destroyItem(id) {
 
     <div class="py-6">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="shadow sm:rounded-lg p-4" style="background-color: var(--color-base);">
+        <div class="shadow sm:rounded-lg p-4" style="background-color: var(--color-base); border: 2px solid var(--color-neutral)">
           <div class="flex gap-2 mb-4">
             <input 
               v-model="q" 
@@ -57,9 +57,9 @@ function destroyItem(id) {
           </div>
 
           <div class="overflow-x-auto">
-            <table class="min-w-full text-sm " style="background-color: var(--color-secondary);">
+            <table class="min-w-full text-sm " style="background-color: var(--color-base);">
               <thead>
-                <tr class="text-left border-b" style="border-color: var(--color-neutral); opacity: 0.3;">
+                <tr class="text-left border-b" style="border-color: var(--color-neutral); ">
                   <th class="p-2" style="color: var(--color-neutral);">ID</th>
                   <th class="p-2" style="color: var(--color-neutral);">Usuario</th>
                   <th class="p-2" style="color: var(--color-neutral);">Especialidad</th>
@@ -68,7 +68,7 @@ function destroyItem(id) {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="b in barberos.data" :key="b.id_barbero" class="border-b" style="border-color: var(--color-neutral); opacity: 0.2;">
+                <tr v-for="b in barberos.data" :key="b.id_barbero" class="border-b" style="border-color: var(--color-neutral); ">
                   <td class="p-2" style="color: var(--color-neutral);">{{ b.id_barbero }}</td>
                   <td class="p-2" style="color: var(--color-neutral);">{{ b.user?.name }} ({{ b.user?.email }})</td>
                   <td class="p-2" style="color: var(--color-neutral);">{{ b.especialidad }}</td>

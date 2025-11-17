@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Barbero;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 class BarberoController extends Controller
 {
@@ -52,10 +53,18 @@ class BarberoController extends Controller
         $data = $request->validate([
             'id_usuario' => ['required', 'unique:barbero,id_usuario', 'exists:users,id'],
             'especialidad' => ['nullable', 'string', 'max:100'],
-            'foto_perfil' => ['nullable', 'string', 'max:255'],
+            'foto_perfil' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'calificacion_promedio' => ['nullable', 'numeric', 'min:0', 'max:5'],
             'estado' => ['nullable', 'in:disponible,ocupado,ausente'],
         ]);
+
+        // Procesar imagen si existe
+        if ($request->hasFile('foto_perfil')) {
+            $imagen = $request->file('foto_perfil');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $ruta = $imagen->storeAs('barberos', $nombreImagen, 'public');
+            $data['foto_perfil'] = '/storage/' . $ruta;
+        }
 
         Barbero::create($data);
         return redirect()->route('barberos.index');
@@ -75,10 +84,24 @@ class BarberoController extends Controller
         $data = $request->validate([
             'id_usuario' => ['required', 'exists:users,id', 'unique:barbero,id_usuario,' . $barbero->id_barbero . ',id_barbero'],
             'especialidad' => ['nullable', 'string', 'max:100'],
-            'foto_perfil' => ['nullable', 'string', 'max:255'],
+            'foto_perfil' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'calificacion_promedio' => ['nullable', 'numeric', 'min:0', 'max:5'],
             'estado' => ['nullable', 'in:disponible,ocupado,ausente'],
         ]);
+
+        // Procesar imagen si existe
+        if ($request->hasFile('foto_perfil')) {
+            // Eliminar imagen anterior si existe
+            if ($barbero->foto_perfil) {
+                $rutaAntigua = str_replace('/storage/', '', $barbero->foto_perfil);
+                Storage::disk('public')->delete($rutaAntigua);
+            }
+            
+            $imagen = $request->file('foto_perfil');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $ruta = $imagen->storeAs('barberos', $nombreImagen, 'public');
+            $data['foto_perfil'] = '/storage/' . $ruta;
+        }
 
         $barbero->update($data);
         return redirect()->route('barberos.index');

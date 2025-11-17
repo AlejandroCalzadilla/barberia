@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Producto;
 use App\Models\Categoria;
+use Illuminate\Support\Facades\Storage;
 
 class ProductoController extends Controller
 {
@@ -68,8 +69,16 @@ class ProductoController extends Controller
             'stock_minimo' => ['nullable', 'integer', 'min:0'],
             'unidad_medida' => ['nullable', 'string', 'max:20'],
             'estado' => ['nullable', 'in:activo,inactivo'],
-            'imagenurl' => ['nullable', 'string', 'max:255'],
+            'imagenurl' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ]);
+
+        // Procesar imagen si existe
+        if ($request->hasFile('imagenurl')) {
+            $imagen = $request->file('imagenurl');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $ruta = $imagen->storeAs('productos', $nombreImagen, 'public');
+            $data['imagenurl'] = '/storage/' . $ruta;
+        }
 
         Producto::create($data);
         return redirect()->route('productos.index');
@@ -97,8 +106,22 @@ class ProductoController extends Controller
             'stock_minimo' => ['nullable', 'integer', 'min:0'],
             'unidad_medida' => ['nullable', 'string', 'max:20'],
             'estado' => ['nullable', 'in:activo,inactivo'],
-            'imagenurl' => ['nullable', 'string', 'max:255'],
+            'imagenurl' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ]);
+
+        // Procesar imagen si existe
+        if ($request->hasFile('imagenurl')) {
+            // Eliminar imagen anterior si existe
+            if ($producto->imagenurl) {
+                $rutaAntigua = str_replace('/storage/', '', $producto->imagenurl);
+                Storage::disk('public')->delete($rutaAntigua);
+            }
+            
+            $imagen = $request->file('imagenurl');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $ruta = $imagen->storeAs('productos', $nombreImagen, 'public');
+            $data['imagenurl'] = '/storage/' . $ruta;
+        }
 
         $producto->update($data);
         return redirect()->route('productos.index');

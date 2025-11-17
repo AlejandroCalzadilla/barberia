@@ -10,7 +10,7 @@ class Barbero extends Model
 {
     use HasFactory;
 
-    protected $table = 'barbers';
+    protected $table = 'barbero';
     protected $primaryKey = 'id_barbero';
 
     protected $fillable = [

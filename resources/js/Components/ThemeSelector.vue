@@ -25,15 +25,13 @@ const closeDropdown = () => {
         <!-- Botón del selector -->
         <button
             @click="toggleDropdown"
-            class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            style="background-color: var(--color-secondary);"
+            class="flex items-center gap-2 px-4 py-2 border rounded-lg shadow-sm  transition-all duration-200"
+            style="background-color: var(--color-secondary); color: var(--color-base); border-color: var(--color-secondary);"
             >
-            <span 
-            
-            class="text-lg">{{ getCurrentThemeInfo().icon }}</span>
-            <span class="hidden sm:inline text-gray-700 dark:text-gray-200">{{ getCurrentThemeInfo().name }}</span>
+            <span class="text-lg">{{ getCurrentThemeInfo().icon }}</span>
+            <span class="hidden sm:inline text-sm font-medium">{{ getCurrentThemeInfo().name }}</span>
             <svg 
-                class="w-4 h-4 ml-1 text-gray-500 transition-transform duration-200"
+                class="w-4 h-4 ml-1 transition-transform duration-200"
                 :class="{ 'rotate-180': isOpen }"
                 fill="none" 
                 stroke="currentColor" 
@@ -52,24 +50,26 @@ const closeDropdown = () => {
         
         <div 
             v-show="isOpen"
-            class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20"
+            class="absolute right-0 mt-2 w-52 border rounded-lg shadow-lg z-20"
+            style="background-color: var(--color-base); border-color: var(--color-neutral); ;"
         >
             <div class="py-2">
                 <button
                     v-for="themeOption in availableThemes"
                     :key="themeOption.value"
                     @click="handleThemeChange(themeOption.value)"
-                    class="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    :class="{ 
-                        'bg-primary text-white hover:bg-primary hover:opacity-80': theme === themeOption.value,
-                        'text-gray-700 dark:text-gray-200': theme !== themeOption.value
+                    class="w-full flex items-center gap-3 px-4 py-2 text-left transition-all duration-200 hover:opacity-100"
+                    :style="{
+                        backgroundColor: theme === themeOption.value ? 'var(--color-primary)' : 'transparent',
+                        color: theme === themeOption.value ? 'var(--color-base)' : 'var(--color-neutral)',
+                        opacity: theme === themeOption.value ? 1 : 0.7,
                     }"
                 >
                     <span class="text-lg">{{ themeOption.icon }}</span>
-                    <span>{{ themeOption.name }}</span>
+                    <span class="flex-1 text-sm font-medium">{{ themeOption.name }}</span>
                     <svg 
                         v-if="theme === themeOption.value"
-                        class="w-4 h-4 ml-auto"
+                        class="w-4 h-4"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                     >

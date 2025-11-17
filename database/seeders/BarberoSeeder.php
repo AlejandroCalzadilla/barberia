@@ -6,6 +6,8 @@ use App\Models\Barbero;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class BarberoSeeder extends Seeder
@@ -23,7 +25,6 @@ class BarberoSeeder extends Seeder
                 'telefono' => '70000003',
                 'direccion' => 'Av. Principal 456',
                 'especialidad' => 'Cortes clásicos y afeitados tradicionales',
-                'foto_perfil' => 'https://example.com/images/barbero1.jpg',
                 'estado' => 'disponible'
             ],
             [
@@ -32,7 +33,6 @@ class BarberoSeeder extends Seeder
                 'telefono' => '70000004',
                 'direccion' => 'Calle 10 #25-30',
                 'especialidad' => 'Estilos modernos y diseños creativos',
-                'foto_perfil' => 'https://example.com/images/barbero2.jpg',
                 'estado' => 'disponible'
             ],
             [
@@ -41,12 +41,11 @@ class BarberoSeeder extends Seeder
                 'telefono' => '70000005',
                 'direccion' => 'Carrera 15 #20-45',
                 'especialidad' => 'Especialista en barba y bigote',
-                'foto_perfil' => 'https://example.com/images/barbero3.jpg',
                 'estado' => 'disponible'
             ]
         ];
 
-        foreach ($barberos as $barberoData) {
+        foreach ($barberos as $index => $barberoData) {
             // Crear usuario para el barbero
             $user = User::firstOrCreate(
                 ['email' => $barberoData['email']],
@@ -64,16 +63,28 @@ class BarberoSeeder extends Seeder
             // Asignar rol de barbero
             $user->assignRole('barbero');
 
-            // Crear registro en la tabla barbers
+            // Descargar imagen de Picsum
+            try {
+                $imageUrl = 'https://picsum.photos/400/400?random=' . (100 + $index);
+                $imageContent = Http::timeout(10)->get($imageUrl)->body();
+                
+                // Guardar localmente
+                $filename = "barbero_{$user->id}.jpg";
+                Storage::disk('public')->put("barberos/{$filename}", $imageContent);
+                $fotoPerfil = "/storage/barberos/{$filename}";
+            } catch (\Exception $e) {
+                \Log::warning("Error descargando imagen para barbero: " . $e->getMessage());
+                $fotoPerfil = null;
+            }
+
+            // Crear registro en la tabla barberos
             Barbero::create([
                 'id_usuario' => $user->id,
                 'especialidad' => $barberoData['especialidad'],
-                'foto_perfil' => $barberoData['foto_perfil'],
-                'estado' => $barberoData['estado'] ?? 'disponible' // Usar el estado definido o 'disponible' por defecto
+                'foto_perfil' => $fotoPerfil,
+                'calificacion_promedio' => rand(3, 5) + rand(0, 99) / 100,
+                'estado' => $barberoData['estado'] ?? 'disponible'
             ]);
         }
-                    
-
-        
     }
 }

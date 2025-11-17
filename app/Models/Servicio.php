@@ -11,7 +11,7 @@ class Servicio extends Model
 {
     use HasFactory;
 
-    protected $table = 'services';
+    protected $table = 'servicio';
     protected $primaryKey = 'id_servicio';
 
     protected $fillable = [
@@ -26,9 +26,9 @@ class Servicio extends Model
     /**
      * The productos that belong to the servicio.
      */
-    public function products()
+    public function productos()
     {
-        return $this->belongsToMany(Product::class, 'service_product', 'id_servicio', 'id_producto')
+        return $this->belongsToMany(Producto::class, 'service_product', 'id_servicio', 'id_producto')
             ->withPivot('cantidad')
             ->withTimestamps();
     }
@@ -36,8 +36,8 @@ class Servicio extends Model
     /**
      * Get the reservas for the servicio.
      */
-    public function bookings()
+    public function reservas()
     {
-        return $this->hasMany(Booking::class, 'id_servicio', 'id_servicio');
+        return $this->hasMany(Reserva::class, 'id_servicio', 'id_servicio');
     }
 }

@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Servicio;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class ServicioSeeder extends Seeder
 {
@@ -21,7 +23,6 @@ class ServicioSeeder extends Seeder
                 'duracion_minutos' => 30,
                 'precio' => 15.00,
                 'estado' => 'activo',
-                'imagen' => 'https://example.com/images/corte-clasico.jpg'
             ],
             [
                 'nombre' => 'Corte Fade/Degradado',
@@ -29,7 +30,6 @@ class ServicioSeeder extends Seeder
                 'duracion_minutos' => 45,
                 'precio' => 20.00,
                 'estado' => 'activo',
-                'imagen' => 'https://example.com/images/fade.jpg'
             ],
             [
                 'nombre' => 'Afeitado Clásico con Navaja',
@@ -37,7 +37,6 @@ class ServicioSeeder extends Seeder
                 'duracion_minutos' => 30,
                 'precio' => 12.00,
                 'estado' => 'activo',
-                'imagen' => 'https://example.com/images/afeitado.jpg'
             ],
             [
                 'nombre' => 'Arreglo de Barba',
@@ -45,7 +44,6 @@ class ServicioSeeder extends Seeder
                 'duracion_minutos' => 20,
                 'precio' => 10.00,
                 'estado' => 'activo',
-                'imagen' => 'https://example.com/images/barba.jpg'
             ],
             [
                 'nombre' => 'Corte Infantil',
@@ -53,7 +51,6 @@ class ServicioSeeder extends Seeder
                 'duracion_minutos' => 25,
                 'precio' => 10.00,
                 'estado' => 'activo',
-                'imagen' => 'https://example.com/images/corte-infantil.jpg'
             ],
             [
                 'nombre' => 'Combo Corte + Barba',
@@ -61,7 +58,6 @@ class ServicioSeeder extends Seeder
                 'duracion_minutos' => 60,
                 'precio' => 25.00,
                 'estado' => 'activo',
-                'imagen' => 'https://example.com/images/combo.jpg'
             ],
             [
                 'nombre' => 'Diseño de Cabello',
@@ -69,14 +65,34 @@ class ServicioSeeder extends Seeder
                 'duracion_minutos' => 40,
                 'precio' => 18.00,
                 'estado' => 'activo',
-                'imagen' => 'https://example.com/images/diseno-cabello.jpg'
             ]
         ];
 
         $count = 0;
-        foreach ($servicios as $servicio) {
+        foreach ($servicios as $index => $servicio) {
             try {
-                Servicio::create($servicio);
+                // Descargar imagen de Picsum
+                $imagenUrl = null;
+                try {
+                    $imageUrl = 'https://picsum.photos/400/300?random=' . (200 + $index);
+                    $imageContent = Http::timeout(10)->get($imageUrl)->body();
+                    
+                    // Guardar localmente
+                    $filename = "servicio_{$index}.jpg";
+                    Storage::disk('public')->put("servicios/{$filename}", $imageContent);
+                    $imagenUrl = "/storage/servicios/{$filename}";
+                } catch (\Exception $e) {
+                    \Log::warning("Error descargando imagen para servicio: " . $e->getMessage());
+                }
+
+                Servicio::create([
+                    'nombre' => $servicio['nombre'],
+                    'descripcion' => $servicio['descripcion'],
+                    'duracion_minutos' => $servicio['duracion_minutos'],
+                    'precio' => $servicio['precio'],
+                    'imagen' => $imagenUrl,
+                    'estado' => $servicio['estado'],
+                ]);
                 $count++;
                 $this->command->info("✓ Servicio creado: {$servicio['nombre']}");
             } catch (\Exception $e) {

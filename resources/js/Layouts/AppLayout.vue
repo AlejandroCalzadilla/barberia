@@ -7,6 +7,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
+import ThemeSelector from '@/Components/ThemeSelector.vue';
 import { useTheme } from '@/composables/useTheme.js';
 
 defineProps({
@@ -60,6 +61,11 @@ const logout = () => {
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                     Dashboard
                                 </NavLink>
+                                
+                                <!-- Theme Selector -->
+                                <div class="flex items-center">
+                                    <ThemeSelector />
+                                </div>
                             </div>
                         </div>
 

@@ -13,7 +13,7 @@ class Reserva extends Model
 {
     use HasFactory;
 
-    protected $table = 'bookings';
+    protected $table = 'reserva';
     protected $primaryKey = 'id_reserva';
 
     protected $fillable = [

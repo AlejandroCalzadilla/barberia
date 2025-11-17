@@ -9,7 +9,7 @@ class ServicioProducto extends Model
 {
     use HasFactory;
 
-    protected $table = 'service_product';
+    protected $table = 'servicio_producto';
     
     // Disable auto-incrementing as we have a composite primary key
     public $incrementing = false;

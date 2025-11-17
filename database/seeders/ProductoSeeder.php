@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\Categoria;
 use App\Models\Producto;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class ProductoSeeder extends Seeder
 {
@@ -39,7 +41,6 @@ class ProductoSeeder extends Seeder
                 'stock_minimo' => 5,
                 'unidad_medida' => 'unidad',
                 'estado' => 'activo',
-                'imagenurl' => ''
             ],
             [
                 'id_categoria' => $cuidadoCabello->id_categoria,
@@ -52,7 +53,6 @@ class ProductoSeeder extends Seeder
                 'stock_minimo' => 5,
                 'unidad_medida' => 'botella',
                 'estado' => 'activo',
-                'imagenurl' => ''
             ],
             
             // Cuidado de la Barba
@@ -67,7 +67,6 @@ class ProductoSeeder extends Seeder
                 'stock_minimo' => 3,
                 'unidad_medida' => 'frasco',
                 'estado' => 'activo',
-                'imagenurl' => ''
             ],
             
             // Afeitado Clásico
@@ -82,7 +81,6 @@ class ProductoSeeder extends Seeder
                 'stock_minimo' => 2,
                 'unidad_medida' => 'unidad',
                 'estado' => 'activo',
-                'imagenurl' => ''
             ],
             
             // Productos Desechables
@@ -97,14 +95,39 @@ class ProductoSeeder extends Seeder
                 'stock_minimo' => 20,
                 'unidad_medida' => 'paquete',
                 'estado' => 'activo',
-                'imagenurl' => ''
             ]
         ];
         
         $count = 0;
-        foreach ($productos as $producto) {
+        foreach ($productos as $index => $producto) {
             try {
-                Producto::create($producto);
+                // Descargar imagen de Picsum
+                $imagenUrl = null;
+                try {
+                    $imageUrl = 'https://picsum.photos/400/300?random=' . (300 + $index);
+                    $imageContent = Http::timeout(10)->get($imageUrl)->body();
+                    
+                    // Guardar localmente
+                    $filename = "producto_{$index}.jpg";
+                    Storage::disk('public')->put("productos/{$filename}", $imageContent);
+                    $imagenUrl = "/storage/productos/{$filename}";
+                } catch (\Exception $e) {
+                    \Log::warning("Error descargando imagen para producto: " . $e->getMessage());
+                }
+
+                Producto::create([
+                    'id_categoria' => $producto['id_categoria'],
+                    'codigo' => $producto['codigo'],
+                    'nombre' => $producto['nombre'],
+                    'descripcion' => $producto['descripcion'],
+                    'precio_compra' => $producto['precio_compra'],
+                    'precio_venta' => $producto['precio_venta'],
+                    'stock_actual' => $producto['stock_actual'],
+                    'stock_minimo' => $producto['stock_minimo'],
+                    'unidad_medida' => $producto['unidad_medida'],
+                    'imagenurl' => $imagenUrl,
+                    'estado' => $producto['estado'],
+                ]);
                 $count++;
                 $this->command->info("✓ Producto creado: {$producto['nombre']}");
             } catch (\Exception $e) {

@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue'
 import { router, Link, useForm } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 
@@ -7,13 +8,27 @@ const props = defineProps({
   usuarios: Array,
 })
 
+const previewImage = ref(null)
+
 const form = useForm({
   id_usuario: props.barbero.id_usuario ?? '',
   especialidad: props.barbero.especialidad ?? '',
-  foto_perfil: props.barbero.foto_perfil ?? '',
+  foto_perfil: null,
   calificacion_promedio: props.barbero.calificacion_promedio ?? 0,
   estado: props.barbero.estado ?? 'disponible',
 })
+
+function handleImageChange(event) {
+  const file = event.target.files[0]
+  if (file) {
+    form.foto_perfil = file
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      previewImage.value = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
 
 function submit() {
   form.put(route('barberos.update', props.barbero.id_barbero))
@@ -64,15 +79,24 @@ function submit() {
           </div>
 
           <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Foto perfil (URL)</label>
+            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Foto perfil</label>
+            <div v-if="props.barbero.foto_perfil" class="mb-3">
+              <p class="text-xs mb-2" style="color: var(--color-neutral);">Imagen actual:</p>
+              <img :src="props.barbero.foto_perfil" alt="Foto actual" class="w-full h-auto rounded max-w-xs" />
+            </div>
             <input 
-              v-model="form.foto_perfil" 
-              type="text" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition" 
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+              type="file" 
+              accept="image/*" 
+              @change="handleImageChange"
+              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
+              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral);"
               :style="{'--tw-ring-color': 'var(--color-primary)'}"
             />
             <div v-if="form.errors.foto_perfil" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.foto_perfil }}</div>
+            <div v-if="previewImage" class="mt-3">
+              <p class="text-xs mb-2" style="color: var(--color-neutral);">Nueva imagen:</p>
+              <img :src="previewImage" alt="Preview" class="w-full h-auto rounded max-w-xs" />
+            </div>
           </div>
 
           <div>

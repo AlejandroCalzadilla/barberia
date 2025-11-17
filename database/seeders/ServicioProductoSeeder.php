@@ -13,6 +13,7 @@ class ServicioProductoSeeder extends Seeder
      * Run the database seeds.
      */
     public function run(): void
+
     {
         $this->command->info('→ Creando relaciones entre servicios y productos...');
         
