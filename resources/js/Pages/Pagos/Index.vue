@@ -17,7 +17,7 @@ const props = defineProps({
   },
   estadosPago: {
     type: Array,
-    default: () => ['pendiente', 'completado', 'rechazado', 'reembolsado']
+    default: () => ['pendiente', 'pagado', 'cancelado', 'reembolsado']
   },
 })
 
@@ -74,7 +74,7 @@ function destroyItem(id) {
 }
 
 function formatCurrency(amount) {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount || 0)
+  return new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB', minimumFractionDigits: 2 }).format(amount || 0)
 }
 
 function formatDate(dateString) {
@@ -89,17 +89,28 @@ function formatDate(dateString) {
   })
 }
 
-function getEstadoBadgeClass(estado) {
-  const classes = {
-    'pendiente': 'bg-yellow-100 text-yellow-800',
-    'completado': 'bg-green-100 text-green-800',
-    'rechazado': 'bg-red-100 text-red-800',
-    'reembolsado': 'bg-blue-100 text-blue-800',
+function getEstadoBadgeStyle(estado) {
+  const styles = {
+    'pendiente': { backgroundColor: 'var(--color-warning)', color: 'var(--color-base)' },
+    'pagado': { backgroundColor: 'var(--color-success)', color: 'var(--color-base)' },
+    'cancelado': { backgroundColor: 'var(--color-error)', color: 'var(--color-base)' },
+    'reembolsado': { backgroundColor: 'var(--color-info)', color: 'var(--color-base)' },
   }
-  return classes[estado] || 'bg-gray-100 text-gray-800'
+  return styles[estado] || { backgroundColor: 'var(--color-neutral)', color: 'var(--color-base)' }
+}
+
+function getTipoPagoStyle(tipo) {
+  const styles = {
+    'anticipo': { backgroundColor: 'var(--color-primary)', color: 'var(--color-base)' },
+    'pago_parcial': { backgroundColor: 'var(--color-secondary)', color: 'var(--color-base)' },
+    'pago_completo': { backgroundColor: 'var(--color-success)', color: 'var(--color-base)' },
+    'producto': { backgroundColor: 'var(--color-accent)', color: 'var(--color-base)' },
+  }
+  return styles[tipo] || { backgroundColor: 'var(--color-neutral)', color: 'var(--color-base)' }
 }
 
 function getTipoPagoLabel(tipo) {
+  console.log('tipo pago:', tipo)
   const tipos = {
     'anticipo': 'Anticipo',
     'pago_parcial': 'Pago Parcial',
@@ -115,20 +126,8 @@ function getTipoPagoLabel(tipo) {
     <template #header>
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 class="text-2xl font-bold text-gray-900">Gestión de Pagos</h2>
-          <p class="mt-1 text-sm text-gray-600">Administre los pagos de reservas y productos</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <Link 
-            v-if="can('pagos.create')" 
-            :href="route('pagos.create')" 
-            class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
-            </svg>
-            Nuevo Pago
-          </Link>
+          <h2 class="text-2xl font-bold" :style="{ color: 'var(--color-neutral)' }">Gestión de Pagos</h2>
+          <p class="mt-1 text-sm" :style="{ color: 'var(--color-neutral)' }">Administre los pagos de reservas</p>
         </div>
       </div>
     </template>
@@ -136,68 +135,110 @@ function getTipoPagoLabel(tipo) {
     <div class="py-6">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Filtros -->
-        <div class="bg-white shadow rounded-lg p-4 mb-6">
+        <div class="shadow rounded-lg p-4 mb-6" :style="{ backgroundColor: 'var(--color-base)' }">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div class="space-y-1">
-              <label class="block text-sm font-medium text-gray-700">Buscar reserva</label>
+              <label class="block text-sm font-medium" :style="{ color: 'var(--color-neutral)' }">Buscar reserva</label>
               <div class="relative">
                 <input 
                   v-model="searchQuery" 
                   @keyup.enter="search" 
                   type="text" 
                   placeholder="ID o nombre de cliente" 
-                  class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  class="w-full pl-3 pr-10 py-2 rounded-md focus:outline-none focus:ring-2 transition"
+                  :style="{ 
+                    borderColor: 'var(--color-neutral)',
+                    borderWidth: '1px',
+                    backgroundColor: 'var(--color-base)',
+                    color: 'var(--color-neutral)',
+                    '--tw-ring-color': 'var(--color-primary)'
+                  }"
                 >
                 <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" :style="{ color: 'var(--color-neutral)' }">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
               </div>
-              <div v-if="searchQuery && filteredReservas.length > 0" class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md py-1 max-h-60 overflow-auto">
+              <div v-if="searchQuery && filteredReservas.length > 0" class="absolute z-10 mt-1 w-full shadow-lg rounded-md py-1 max-h-60 overflow-auto" :style="{ backgroundColor: 'var(--color-base)' }">
                 <div v-for="r in filteredReservas" :key="r.id_reserva" 
                      @click="reserva = r.id_reserva; searchQuery = `#${r.id_reserva} - ${r.cliente?.user?.name}`"
-                     class="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
+                     class="px-4 py-2 text-sm cursor-pointer transition"
+                     :style="{ color: 'var(--color-neutral)' }"
+                     @mouseenter="$event.target.style.backgroundColor = 'var(--color-primary)'; $event.target.style.color = 'var(--color-base)'"
+                     @mouseleave="$event.target.style.backgroundColor = 'transparent'; $event.target.style.color = 'var(--color-neutral)'">
                   #{{ r.id_reserva }} - {{ r.cliente?.user?.name }}
                 </div>
               </div>
             </div>
             
             <div class="space-y-1">
-              <label class="block text-sm font-medium text-gray-700">Tipo de pago</label>
-              <select v-model="tipo" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <label class="block text-sm font-medium" :style="{ color: 'var(--color-neutral)' }">Tipo de pago</label>
+              <select v-model="tipo" class="w-full rounded-md py-2 px-3 focus:outline-none focus:ring-2 transition"
+                :style="{ 
+                  borderColor: 'var(--color-neutral)',
+                  borderWidth: '1px',
+                  backgroundColor: 'var(--color-base)',
+                  color: 'var(--color-neutral)',
+                  '--tw-ring-color': 'var(--color-primary)'
+                }">
                 <option value="">Todos los tipos</option>
                 <option v-for="t in tiposPago" :key="t" :value="t">{{ getTipoPagoLabel(t) }}</option>
               </select>
             </div>
             
             <div class="space-y-1">
-              <label class="block text-sm font-medium text-gray-700">Estado</label>
-              <select v-model="estado" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <label class="block text-sm font-medium" :style="{ color: 'var(--color-neutral)' }">Estado</label>
+              <select v-model="estado" class="w-full rounded-md py-2 px-3 focus:outline-none focus:ring-2 transition"
+                :style="{ 
+                  borderColor: 'var(--color-neutral)',
+                  borderWidth: '1px',
+                  backgroundColor: 'var(--color-base)',
+                  color: 'var(--color-neutral)',
+                  '--tw-ring-color': 'var(--color-primary)'
+                }">
                 <option value="">Todos los estados</option>
                 <option v-for="e in estadosPago" :key="e" :value="e">{{ e.charAt(0).toUpperCase() + e.slice(1) }}</option>
               </select>
             </div>
             
             <div class="space-y-1">
-              <label class="block text-sm font-medium text-gray-700">Fecha</label>
+              <label class="block text-sm font-medium" :style="{ color: 'var(--color-neutral)' }">Fecha</label>
               <input 
                 v-model="fecha" 
                 type="date" 
-                class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                class="w-full rounded-md py-2 px-3 focus:outline-none focus:ring-2 transition"
+                :style="{ 
+                  borderColor: 'var(--color-neutral)',
+                  borderWidth: '1px',
+                  backgroundColor: 'var(--color-base)',
+                  color: 'var(--color-neutral)',
+                  '--tw-ring-color': 'var(--color-primary)'
+                }"
               >
             </div>
             
             <div class="flex items-end space-x-2">
               <button 
                 @click="search" 
-                class="w-full md:w-auto px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                class="w-full md:w-auto px-4 py-2 text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition font-medium"
+                :style="{ 
+                  backgroundColor: 'var(--color-primary)',
+                  '--tw-ring-color': 'var(--color-primary)'
+                }"
               >
                 Filtrar
               </button>
               <button 
                 @click="resetFilters" 
-                class="w-full md:w-auto px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                class="w-full md:w-auto px-4 py-2 rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition font-medium"
+                :style="{ 
+                  borderColor: 'var(--color-neutral)',
+                  borderWidth: '1px',
+                  backgroundColor: 'var(--color-secondary)',
+                  color: 'var(--color-base)',
+                  '--tw-ring-color': 'var(--color-secondary)'
+                }"
               >
                 Limpiar
               </button>
@@ -205,62 +246,55 @@ function getTipoPagoLabel(tipo) {
           </div>
         </div>
 
+
+
         <!-- Tabla de pagos -->
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="shadow overflow-hidden sm:rounded-lg" :style="{ backgroundColor: 'var(--color-base)' }">
           <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
+            <table class="min-w-full divide-y" :style="{ borderColor: 'var(--color-neutral)' }">
+              <thead :style="{ backgroundColor: 'var(--color-accent)', borderColor: 'var(--color-neutral)' }">
                 <tr>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reserva</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                  <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" :style="{ color: 'var(--color-base)' }">Reserva</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" :style="{ color: 'var(--color-base)' }">Fecha</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" :style="{ color: 'var(--color-base)' }">Método</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" :style="{ color: 'var(--color-base)' }">Tipo</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" :style="{ color: 'var(--color-base)' }">Total</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" :style="{ color: 'var(--color-base)' }">Estado</th>
+                  <th scope="col" class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider" :style="{ color: 'var(--color-base)' }">Acciones</th>
                 </tr>
               </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="p in pagos.data" :key="p.id_pago" class="hover:bg-gray-50">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    #{{ p.id_pago }}
-                  </td>
+              <tbody class="divide-y" :style="{ borderColor: 'var(--color-neutral)' }">
+                <tr v-for="p in pagos.data" :key="p.id_pago" class="hover:opacity-75 transition" :style="{ backgroundColor: 'var(--color-base)' }">
+                  
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">
+                    <div class="text-sm font-medium" :style="{ color: 'var(--color-neutral)' }">
                       <span v-if="p.reserva">
                         #{{ p.id_reserva }} - {{ p.reserva.cliente?.user?.name || 'Cliente' }}
                       </span>
-                      <span v-else class="text-gray-500">Sin reserva</span>
+                      <span v-else :style="{ color: 'var(--color-error)' }">Sin reserva</span>
                     </div>
-                    <div v-if="p.reserva" class="text-xs text-gray-500">
+                    <div v-if="p.reserva" class="text-xs" :style="{ color: 'var(--color-neutral)', opacity: 0.7 }">
                       {{ p.reserva.servicio?.nombre || 'Sin servicio' }} - {{ p.reserva.barbero?.user?.name || 'Sin barbero' }}
                     </div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm" :style="{ color: 'var(--color-neutral)' }">
                     {{ formatDate(p.fecha_pago) }}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm" :style="{ color: 'var(--color-neutral)' }">
                     {{ p.metodo_pago }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" 
-                          :class="{
-                            'bg-purple-100 text-purple-800': p.tipo === 'anticipo',
-                            'bg-blue-100 text-blue-800': p.tipo === 'pago_parcial',
-                            'bg-green-100 text-green-800': p.tipo === 'pago_completo',
-                            'bg-indigo-100 text-indigo-800': p.tipo === 'producto',
-                            'bg-gray-100 text-gray-800': !['anticipo', 'pago_parcial', 'pago_completo', 'producto'].includes(p.tipo)
-                          }">
-                      {{ getTipoPagoLabel(p.tipo) }}
+                          :style="getTipoPagoStyle(p.tipo_pago)">
+                      {{ getTipoPagoLabel(p.tipo_pago) }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {{ formatCurrency(p.monto) }}
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium" :style="{ color: 'var(--color-primary)' }">
+                    {{ formatCurrency(p.monto_total) }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" 
-                          :class="getEstadoBadgeClass(p.estado)">
+                          :style="getEstadoBadgeStyle(p.estado)">
                       {{ p.estado.charAt(0).toUpperCase() + p.estado.slice(1) }}
                     </span>
                   </td>
@@ -269,8 +303,9 @@ function getTipoPagoLabel(tipo) {
                       <Link 
                         v-if="can('pagos.update')" 
                         :href="route('pagos.edit', p.id_pago)" 
-                        class="text-indigo-600 hover:text-indigo-900"
+                        class="hover:opacity-75 transition"
                         title="Editar"
+                        :style="{ color: 'var(--color-primary)' }"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -279,8 +314,9 @@ function getTipoPagoLabel(tipo) {
                       <button 
                         v-if="can('pagos.delete')" 
                         @click="destroyItem(p.id_pago)" 
-                        class="text-red-600 hover:text-red-900"
+                        class="hover:opacity-75 transition"
                         title="Eliminar"
+                        :style="{ color: 'var(--color-error)' }"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -288,8 +324,9 @@ function getTipoPagoLabel(tipo) {
                       </button>
                       <a 
                         :href="route('pagos.show', p.id_pago)" 
-                        class="text-gray-600 hover:text-gray-900"
+                        class="hover:opacity-75 transition"
                         title="Ver detalles"
+                        :style="{ color: 'var(--color-secondary)' }"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -300,7 +337,7 @@ function getTipoPagoLabel(tipo) {
                   </td>
                 </tr>
                 <tr v-if="pagos.data.length === 0">
-                  <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colspan="7" class="px-6 py-4 text-center text-sm" :style="{ color: 'var(--color-neutral)' }">
                     No se encontraron pagos con los filtros seleccionados
                   </td>
                 </tr>
@@ -309,10 +346,10 @@ function getTipoPagoLabel(tipo) {
           </div>
           
           <!-- Paginación -->
-          <div v-if="pagos.links?.length > 3" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+          <div v-if="pagos.links?.length > 3" class="px-4 py-3 flex items-center justify-between border-t" :style="{ backgroundColor: 'var(--color-base)', borderColor: 'var(--color-neutral)' }">
             <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
-                <p class="text-sm text-gray-700">
+                <p class="text-sm" :style="{ color: 'var(--color-neutral)' }">
                   Mostrando
                   <span class="font-medium">{{ pagos.from || 0 }}</span>
                   a
@@ -329,18 +366,28 @@ function getTipoPagoLabel(tipo) {
                       v-if="link.url"
                       :href="link.url" 
                       v-html="link.label"
-                      class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                      class="relative inline-flex items-center px-4 py-2 text-sm font-medium transition"
                       :class="{
-                        'z-10 bg-indigo-50 border-indigo-500 text-indigo-600': link.active,
-                        'bg-white border-gray-300 text-gray-500 hover:bg-gray-50': !link.active,
                         'rounded-l-md': index === 0,
                         'rounded-r-md': index === pagos.links.length - 1
+                      }"
+                      :style="{
+                        backgroundColor: link.active ? 'var(--color-primary)' : 'var(--color-base)',
+                        color: link.active ? 'var(--color-base)' : 'var(--color-neutral)',
+                        borderColor: 'var(--color-neutral)',
+                        borderWidth: '1px'
                       }"
                     />
                     <span 
                       v-else
                       v-html="link.label"
-                      class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                      class="relative inline-flex items-center px-4 py-2 text-sm font-medium"
+                      :style="{
+                        backgroundColor: 'var(--color-base)',
+                        color: 'var(--color-neutral)',
+                        borderColor: 'var(--color-neutral)',
+                        borderWidth: '1px'
+                      }"
                     />
                   </template>
                 </nav>

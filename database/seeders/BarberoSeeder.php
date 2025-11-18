@@ -82,7 +82,6 @@ class BarberoSeeder extends Seeder
                 'id_usuario' => $user->id,
                 'especialidad' => $barberoData['especialidad'],
                 'foto_perfil' => $fotoPerfil,
-                'calificacion_promedio' => rand(3, 5) + rand(0, 99) / 100,
                 'estado' => $barberoData['estado'] ?? 'disponible'
             ]);
         }

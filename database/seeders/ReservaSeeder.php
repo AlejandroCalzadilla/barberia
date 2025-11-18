@@ -45,6 +45,7 @@ class ReservaSeeder extends Seeder
                 // Calcular hora de fin basada en la duración del servicio
                 $horaFin = (clone $horaInicio)->addMinutes($servicio->duracion_minutos);
                 
+
                 $reserva = Reserva::create([
                     'id_cliente' => $cliente->id_cliente,
                     'id_barbero' => $barbero->id_barbero,
@@ -55,6 +56,7 @@ class ReservaSeeder extends Seeder
                     'estado' => $estado,
                     'notas' => rand(0, 1) ? 'Notas adicionales para la reserva' : null,
                     'total' => $servicio->precio,
+                    'monto_anticipo' =>  round($servicio->precio * 0.5, 2) 
                     
                 ]);
                 

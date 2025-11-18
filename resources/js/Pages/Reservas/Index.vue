@@ -1,6 +1,7 @@
 <script setup>
 import { router, Link, usePage } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
+import ReservasCalendario from '@/Components/ReservasCalendario.vue'
 import { ref } from 'vue'
 
 const props = defineProps({
@@ -9,6 +10,8 @@ const props = defineProps({
   barberos: Array,
   servicios: Array,
   filters: Object,
+  isBarbero: Boolean,
+  barberoNombre: String,
 })
 
 const cliente = ref(props.filters?.cliente || '')
@@ -30,11 +33,13 @@ function destroyItem(id) {
 </script>
 
 <template>
-  <AppLayout title="Reservas">
+  <AppLayout :title="isBarbero ? 'Mis Reservas' : 'Reservas'">
     <template #header>
       <div class="flex items-center justify-between">
-        <h2 class="font-semibold text-xl leading-tight" style="color: var(--color-neutral);">Reservas</h2>
-        <Link v-if="can('reservas.create')" :href="route('reservas.create')" 
+        <h2 class="font-semibold text-xl leading-tight" style="color: var(--color-neutral);">
+          {{ isBarbero ? 'Mis Reservas' : 'Reservas' }}
+        </h2>
+        <Link v-if="can('reservas.create') && !isBarbero" :href="route('reservas.create')" 
               class="px-3 py-2 text-white rounded hover:opacity-90 transition" 
               style="background-color: var(--color-primary);">
           Nueva
@@ -44,7 +49,15 @@ function destroyItem(id) {
 
     <div class="py-6">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="shadow sm:rounded-lg p-4" style="background-color: var(--color-base); border: 2px solid var(--color-neutral)">
+        <!-- Vista para barberos - Calendario -->
+        <ReservasCalendario 
+          v-if="isBarbero" 
+          :reservas="reservas"
+          :barbero-nombre="barberoNombre"
+        />
+
+        <!-- Vista para administradores - Tabla -->
+        <div v-else class="shadow sm:rounded-lg p-4" style="background-color: var(--color-base); border: 2px solid var(--color-neutral)">
           <div class="grid md:grid-cols-4 gap-2 mb-4">
             <select 
               v-model="cliente" 

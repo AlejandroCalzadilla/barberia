@@ -17,13 +17,33 @@ class ReservaController extends Controller
     public function __construct()
     {
         $this->middleware('permission:reservas.view')->only(['index']);
-        $this->middleware('permission:reservas.create')->only(['create','store']);
+        $this->middleware('permission:reservas.create')->only(methods: ['create','store']);
         $this->middleware('permission:reservas.update')->only(['edit','update']);
         $this->middleware('permission:reservas.delete')->only(['destroy']);
     }
 
     public function index(Request $request)
     {
+        $user = auth()->user();
+        $isBarbero = $user->barbero()->exists();
+        
+        if ($isBarbero) {
+            // Vista para barberos: sus propias reservas
+            $barberoActual = $user->barbero;
+            $reservas = Reserva::where('id_barbero', $barberoActual->id_barbero)
+                ->with(['cliente.user:id,name', 'servicio:id_servicio,nombre,precio'])
+                ->orderByDesc('fecha_reserva')
+                ->get();
+
+            return Inertia::render('Reservas/Index', [
+                'reservas' => $reservas,
+                'isBarbero' => true,
+                'barberoNombre' => $user->name,
+                'filters' => [],
+            ]);
+        }
+
+        // Vista para administradores: todas las reservas
         $clienteId = $request->integer('cliente');
         $barberoId = $request->integer('barbero');
         $estado = $request->input('estado');
@@ -36,8 +56,7 @@ class ReservaController extends Controller
             ->when(is_string($estado) && $estado !== '', fn($q) => $q->where('estado', $estado))
             ->when(is_string($fecha) && $fecha !== '', fn($q) => $q->whereDate('fecha_reserva', $fecha))
             ->orderByDesc('id_reserva')
-            ->paginate(10)
-            ->withQueryString();
+            ->paginate(10);
 
         $clientes = Cliente::with('user:id,name')->get(['id_cliente','id_usuario']);
         $barberos = Barbero::with('user:id,name')->get(['id_barbero','id_usuario']);
@@ -48,6 +67,7 @@ class ReservaController extends Controller
             'clientes' => $clientes,
             'barberos' => $barberos,
             'servicios' => $servicios,
+            'isBarbero' => false,
             'filters' => [
                 'cliente' => $clienteId,
                 'barbero' => $barberoId,
@@ -63,7 +83,7 @@ class ReservaController extends Controller
         $barberos = Barbero::with('user:id,name')->get(['id_barbero','id_usuario']);
         $servicios = Servicio::orderBy('nombre')->get(['id_servicio','nombre','precio','duracion_minutos']);
 
-        return Inertia::render('Bookings/Create', [
+        return Inertia::render('Reservas/Create', [
             'clientes' => $clientes,
             'barberos' => $barberos,
             'servicios' => $servicios,
@@ -74,12 +94,12 @@ class ReservaController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'id_cliente' => 'required|exists:clients,id_cliente',
-            'id_barbero' => 'required|exists:barbers,id_barbero',
-            'id_servicio' => 'required|exists:services,id_servicio',
+            'id_cliente' => 'required|exists:cliente,id_cliente',
+            'id_barbero' => 'required|exists:barbero,id_barbero',
+            'id_servicio' => 'required|exists:servicio,id_servicio',
             'fecha_reserva' => 'required|date',
             'hora_inicio' => 'required|date_format:H:i',
-            'estado' => 'required|in:pendiente,confirmada,en_proceso,completada,cancelada,no_asistio',
+            'estado' => 'required|in:pendiente_pago,confirmada,en_proceso,completada,cancelada,no_asistio',
             'notas' => 'nullable|string',
             'monto_anticipo' => 'nullable|numeric|min:0',
         ]);
@@ -93,7 +113,7 @@ class ReservaController extends Controller
             $horaFin = $horaInicio->copy()->addMinutes($servicio->duracion_minutos);
 
             $validated['hora_fin'] = $horaFin->format('H:i');
-            $validated['total'] = $servicio->precio;
+            $validated['precio_servicio'] = $servicio->precio;
 
             // Verificar disponibilidad del barbero
             $existeReserva = Reserva::where('id_barbero', $validated['id_barbero'])
@@ -121,7 +141,7 @@ class ReservaController extends Controller
                     'monto' => $validated['monto_anticipo'],
                     'fecha_pago' => now(),
                     'metodo_pago' => 'efectivo',
-                    'estado' => 'completado',
+                    'estado' => 'pagado',
                     'tipo' => 'anticipo',
                 ]);
             }
@@ -145,7 +165,7 @@ class ReservaController extends Controller
         $barberos = Barbero::with('user:id,name')->get(['id_barbero','id_usuario']);
         $servicios = Servicio::orderBy('nombre')->get(['id_servicio','nombre','precio','duracion_minutos']);
 
-        return Inertia::render('Bookings/Edit', [
+        return Inertia::render('Reservas/Edit', [
             'reserva' => $reserva,
             'clientes' => $clientes,
             'barberos' => $barberos,

@@ -16,9 +16,6 @@ return new class extends Migration
             $table->id('id_pago');
             $table->unsignedBigInteger('id_reserva');
             $table->decimal('monto_total', 10, 2);
-            $table->decimal('monto_servicio', 10, 2)->default(0.00);
-            $table->decimal('monto_productos', 10, 2)->default(0.00);
-            $table->decimal('descuento', 10, 2)->default(0.00);
             $table->timestamp('fecha_pago')->useCurrent();
             $table->text('notas')->nullable();
             $table->timestamps();
@@ -41,10 +38,7 @@ return new class extends Migration
 
         // Checks
         DB::statement("ALTER TABLE pago ADD CONSTRAINT chk_monto_total CHECK (monto_total >= 0)");
-        DB::statement("ALTER TABLE pago ADD CONSTRAINT chk_monto_servicio_pago CHECK (monto_servicio >= 0)");
-        DB::statement("ALTER TABLE pago ADD CONSTRAINT chk_monto_productos CHECK (monto_productos >= 0)");
-        DB::statement("ALTER TABLE pago ADD CONSTRAINT chk_descuento CHECK (descuento >= 0)");
-    }
+       }
 
     /**
      * Reverse the migrations.

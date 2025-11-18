@@ -19,8 +19,28 @@ class HorarioController extends Controller
 
     public function index(Request $request)
     {
+        $user = $request->user();
         $barberoId = $request->integer('barbero');
+        $isBarbero = $user->barbero()->exists();
+        
+        // Si es barbero, mostrar solo su horario
+        if ($isBarbero) {
+            $barberoActual = $user->barbero;
+            $horarios = Horario::query()
+                ->with(['barbero.user:id,name'])
+                ->where('id_barbero', $barberoActual->id_barbero)
+                ->orderBy('dia_semana')
+                ->get();
 
+            return Inertia::render('Horarios/Index', [
+                'horarios' => $horarios,
+                'barberos' => [],
+                'filters' => [],
+                'isBarbero' => true,
+            ]);
+        }
+
+        // Si es admin, mostrar todos con filtros
         $horarios = Horario::query()
             ->with(['barbero.user:id,name'])
             ->when($barberoId, fn($q) => $q->where('id_barbero', $barberoId))
@@ -36,6 +56,7 @@ class HorarioController extends Controller
             'filters' => [
                 'barbero' => $barberoId,
             ],
+            'isBarbero' => false,
         ]);
     }
 

@@ -45,9 +45,12 @@ class PermissionsSeeder extends Seeder
         // barbero: ver servicios, ver/crear/actualizar reservas, ver horarios, ver/crear pagos
         $barberoPerms = [
             'servicios.view',
-            'reservas.view','reservas.create','reservas.update',
+            'reservas.view',
             'horarios.view',
-            'pagos.view','pagos.create',
+            'horarios.create',
+            'horarios.update',
+            'horarios.delete',
+            'productos.view', 
         ];
         $barbero->givePermissionTo($barberoPerms);
 

@@ -1,0 +1,371 @@
+<script setup>
+import { ref, computed } from 'vue'
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend } from 'chart.js'
+import { Line, Bar, Pie, Doughnut } from 'vue-chartjs'
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend)
+
+const props = defineProps({
+  pagosData: Array,
+  reservasData: Array,
+  ingresosMensuales: Object,
+  rankingBarberos: Array,
+  serviciosMasPopulares: Array,
+  clientesFrecuentes: Array,
+  distribucionEstados: Object,
+  distribucionMetodosPago: Array,
+})
+
+const chartType = ref('pagos')
+
+// Gráfico de Pagos Mensuales
+const pagosChartData = computed(() => {
+  if (!props.pagosData || props.pagosData.length === 0) {
+    return { labels: [], datasets: [] }
+  }
+
+  const monthlyData = {}
+  props.pagosData.forEach(pago => {
+    const date = new Date(pago.fecha_pago)
+    const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    if (!monthlyData[month]) {
+      monthlyData[month] = 0
+    }
+    monthlyData[month] += pago.monto_total || 0
+  })
+
+  const labels = Object.keys(monthlyData).slice(-6)
+  const data = labels.map(m => monthlyData[m])
+
+  return {
+    labels: labels.map(m => {
+      const [year, month] = m.split('-')
+      return new Date(year, month - 1).toLocaleDateString('es-CO', { month: 'short', year: '2-digit' })
+    }),
+    datasets: [{
+      label: 'Pagos Completados',
+      data: data,
+      borderColor: 'var(--color-success, #10b981)',
+      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+      tension: 0.4,
+      fill: true,
+    }]
+  }
+})
+
+// Gráfico de Reservas por Estado
+const reservasChartData = computed(() => {
+  if (!props.reservasData || props.reservasData.length === 0) {
+    return { labels: [], datasets: [] }
+  }
+
+  const stateData = {
+    'pendiente': 0,
+    'confirmada': 0,
+    'completada': 0,
+    'cancelada': 0,
+  }
+
+  props.reservasData.forEach(res => {
+    const estado = (res.estado || 'pendiente').toLowerCase()
+    if (stateData.hasOwnProperty(estado)) {
+      stateData[estado]++
+    }
+  })
+
+  return {
+    labels: ['Pendiente', 'Confirmada', 'Completada', 'Cancelada'],
+    datasets: [{
+      label: 'Reservas',
+      data: [stateData.pendiente, stateData.confirmada, stateData.completada, stateData.cancelada],
+      backgroundColor: [
+        'rgba(234, 179, 8, 0.8)',
+        'rgba(59, 130, 246, 0.8)',
+        'rgba(16, 185, 129, 0.8)',
+        'rgba(239, 68, 68, 0.8)',
+      ],
+      borderColor: [
+        'rgba(234, 179, 8, 1)',
+        'rgba(59, 130, 246, 1)',
+        'rgba(16, 185, 129, 1)',
+        'rgba(239, 68, 68, 1)',
+      ],
+      borderWidth: 2,
+    }]
+  }
+})
+
+// Gráfico de Barberos Top
+const barberosChartData = computed(() => {
+  if (!props.rankingBarberos || props.rankingBarberos.length === 0) {
+    return { labels: [], datasets: [] }
+  }
+
+  const topBarberos = props.rankingBarberos.slice(0, 5)
+  
+  return {
+    labels: topBarberos.map(b => b.nombre),
+    datasets: [{
+      label: 'Ingresos Generados',
+      data: topBarberos.map(b => b.ingresos_generados),
+      backgroundColor: 'rgba(59, 130, 246, 0.8)',
+      borderColor: 'rgba(59, 130, 246, 1)',
+      borderWidth: 1,
+    }]
+  }
+})
+
+// Gráfico de Servicios Populares
+const serviciosChartData = computed(() => {
+  if (!props.serviciosMasPopulares || props.serviciosMasPopulares.length === 0) {
+    return { labels: [], datasets: [] }
+  }
+
+  return {
+    labels: props.serviciosMasPopulares.map(s => s.nombre),
+    datasets: [{
+      label: 'Veces Completado',
+      data: props.serviciosMasPopulares.map(s => s.veces_completado),
+      backgroundColor: 'rgba(16, 185, 129, 0.8)',
+      borderColor: 'rgba(16, 185, 129, 1)',
+      borderWidth: 1,
+    }]
+  }
+})
+
+// Gráfico de Distribución de Métodos de Pago (Pie)
+const metodosPagoChartData = computed(() => {
+  if (!props.distribucionMetodosPago || props.distribucionMetodosPago.length === 0) {
+    return { labels: [], datasets: [] }
+  }
+
+  const colors = [
+    'rgba(59, 130, 246, 0.8)',
+    'rgba(16, 185, 129, 0.8)',
+    'rgba(234, 179, 8, 0.8)',
+    'rgba(239, 68, 68, 0.8)',
+    'rgba(139, 92, 246, 0.8)',
+  ]
+
+  return {
+    labels: props.distribucionMetodosPago.map(m => m.metodo_pago),
+    datasets: [{
+      label: 'Cantidad de Pagos',
+      data: props.distribucionMetodosPago.map(m => m.cantidad_pagos),
+      backgroundColor: colors.slice(0, props.distribucionMetodosPago.length),
+      borderColor: colors.slice(0, props.distribucionMetodosPago.length),
+      borderWidth: 2,
+    }]
+  }
+})
+
+// Gráfico de Distribución de Estados (Doughnut)
+const estadosChartData = computed(() => {
+  if (!props.distribucionEstados) {
+    return { labels: [], datasets: [] }
+  }
+
+  const data = props.distribucionEstados
+  
+  return {
+    labels: ['Completadas', 'Canceladas', 'No Asistió', 'Confirmadas'],
+    datasets: [{
+      label: 'Reservas',
+      data: [data.completadas || 0, data.canceladas || 0, data.no_asistio || 0, data.confirmadas || 0],
+      backgroundColor: [
+        'rgba(16, 185, 129, 0.8)',
+        'rgba(239, 68, 68, 0.8)',
+        'rgba(234, 179, 8, 0.8)',
+        'rgba(59, 130, 246, 0.8)',
+      ],
+      borderColor: [
+        'rgba(16, 185, 129, 1)',
+        'rgba(239, 68, 68, 1)',
+        'rgba(234, 179, 8, 1)',
+        'rgba(59, 130, 246, 1)',
+      ],
+      borderWidth: 2,
+    }]
+  }
+})
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: {
+    legend: {
+      display: true,
+      labels: {
+        color: 'var(--color-neutral, #6b7280)',
+        font: { size: 12 }
+      }
+    },
+    tooltip: {
+      backgroundColor: 'var(--color-neutral, #1f2937)',
+      titleColor: 'var(--color-base, #ffffff)',
+      bodyColor: 'var(--color-base, #ffffff)',
+      borderColor: 'var(--color-primary, #3b82f6)',
+      borderWidth: 1,
+    }
+  },
+  scales: {
+    y: {
+      ticks: { color: 'var(--color-neutral, #6b7280)' },
+      grid: { color: 'rgba(107, 114, 128, 0.1)' }
+    },
+    x: {
+      ticks: { color: 'var(--color-neutral, #6b7280)' },
+      grid: { color: 'rgba(107, 114, 128, 0.1)' }
+    }
+  }
+}
+
+const pieOptions = {
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: {
+    legend: {
+      display: true,
+      position: 'bottom',
+      labels: {
+        color: 'var(--color-neutral, #6b7280)',
+        font: { size: 12 }
+      }
+    },
+    tooltip: {
+      backgroundColor: 'var(--color-neutral, #1f2937)',
+      titleColor: 'var(--color-base, #ffffff)',
+      bodyColor: 'var(--color-base, #ffffff)',
+      borderColor: 'var(--color-primary, #3b82f6)',
+      borderWidth: 1,
+    }
+  }
+}
+</script>
+
+<template>
+  <div class="space-y-6">
+    <!-- Gráficos principales -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Pagos Mensuales -->
+      <div class="shadow sm:rounded-lg p-6" :style="{ backgroundColor: 'var(--color-base)' }">
+        <h3 class="text-lg font-semibold mb-4" :style="{ color: 'var(--color-neutral)' }">
+          Pagos Mensuales
+        </h3>
+        <div class="h-80">
+          <Line :data="pagosChartData" :options="chartOptions" />
+        </div>
+      </div>
+
+      <!-- Reservas por Estado -->
+      <div class="shadow sm:rounded-lg p-6" :style="{ backgroundColor: 'var(--color-base)' }">
+        <h3 class="text-lg font-semibold mb-4" :style="{ color: 'var(--color-neutral)' }">
+          Distribución de Reservas
+        </h3>
+        <div class="h-80">
+          <Bar :data="reservasChartData" :options="chartOptions" />
+        </div>
+      </div>
+
+      <!-- Barberos Top 5 -->
+      <div class="shadow sm:rounded-lg p-6" :style="{ backgroundColor: 'var(--color-base)' }">
+        <h3 class="text-lg font-semibold mb-4" :style="{ color: 'var(--color-neutral)' }">
+          Top 5 Barberos
+        </h3>
+        <div class="h-80">
+          <Bar :data="barberosChartData" :options="chartOptions" />
+        </div>
+      </div>
+
+      <!-- Servicios Populares -->
+      <div class="shadow sm:rounded-lg p-6" :style="{ backgroundColor: 'var(--color-base)' }">
+        <h3 class="text-lg font-semibold mb-4" :style="{ color: 'var(--color-neutral)' }">
+          Servicios Más Populares
+        </h3>
+        <div class="h-80">
+          <Bar :data="serviciosChartData" :options="chartOptions" />
+        </div>
+      </div>
+
+      <!-- Métodos de Pago -->
+      <div class="shadow sm:rounded-lg p-6" :style="{ backgroundColor: 'var(--color-base)' }">
+        <h3 class="text-lg font-semibold mb-4" :style="{ color: 'var(--color-neutral)' }">
+          Métodos de Pago
+        </h3>
+        <div class="h-80">
+          <Pie :data="metodosPagoChartData" :options="pieOptions" />
+        </div>
+      </div>
+
+      <!-- Distribución de Estados -->
+      <div class="shadow sm:rounded-lg p-6" :style="{ backgroundColor: 'var(--color-base)' }">
+        <h3 class="text-lg font-semibold mb-4" :style="{ color: 'var(--color-neutral)' }">
+          Estados de Reservas
+        </h3>
+        <div class="h-80">
+          <Doughnut :data="estadosChartData" :options="pieOptions" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de Barberos -->
+    <div class="shadow sm:rounded-lg p-6" :style="{ backgroundColor: 'var(--color-base)' }">
+      <h3 class="text-lg font-semibold mb-4" :style="{ color: 'var(--color-neutral)' }">
+        Ranking de Barberos
+      </h3>
+      <div v-if="rankingBarberos && rankingBarberos.length > 0" class="overflow-x-auto">
+        <table class="min-w-full divide-y" :style="{ borderColor: 'var(--color-neutral)' }">
+          <thead :style="{ backgroundColor: 'var(--color-secondary)', color: 'var(--color-base)' }">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase">Barbero</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase">Especialidad</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase">Servicios</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase">Completados</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase">Ingresos</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y" :style="{ borderColor: 'var(--color-neutral)' }">
+            <tr v-for="barbero in rankingBarberos" :key="barbero.id_barbero" class="hover:opacity-75">
+              <td class="px-6 py-4 text-sm" :style="{ color: 'var(--color-neutral)' }">{{ barbero.nombre }}</td>
+              <td class="px-6 py-4 text-sm" :style="{ color: 'var(--color-neutral)' }">{{ barbero.especialidad }}</td>
+              <td class="px-6 py-4 text-sm" :style="{ color: 'var(--color-neutral)' }">{{ barbero.total_servicios }}</td>
+              <td class="px-6 py-4 text-sm font-medium" :style="{ color: 'var(--color-primary)' }">{{ barbero.servicios_completados }}</td>
+              <td class="px-6 py-4 text-sm font-medium" :style="{ color: 'var(--color-success)' }">{{ barbero.ingresos_generados.toFixed(2) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else :style="{ color: 'var(--color-neutral)' }">Sin datos disponibles</div>
+    </div>
+
+    <!-- Tabla de Clientes Frecuentes -->
+    <div class="shadow sm:rounded-lg p-6" :style="{ backgroundColor: 'var(--color-base)' }">
+      <h3 class="text-lg font-semibold mb-4" :style="{ color: 'var(--color-neutral)' }">
+        Clientes Frecuentes
+      </h3>
+      <div v-if="clientesFrecuentes && clientesFrecuentes.length > 0" class="overflow-x-auto">
+        <table class="min-w-full divide-y" :style="{ borderColor: 'var(--color-neutral)' }">
+          <thead :style="{ backgroundColor: 'var(--color-secondary)', color: 'var(--color-base)' }">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase">Cliente</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase">Email</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase">Total Reservas</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase">Gasto Total</th>
+              <th class="px-6 py-3 text-left text-xs font-medium uppercase">Última Visita</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y" :style="{ borderColor: 'var(--color-neutral)' }">
+            <tr v-for="cliente in clientesFrecuentes" :key="cliente.id_cliente" class="hover:opacity-75">
+              <td class="px-6 py-4 text-sm" :style="{ color: 'var(--color-neutral)' }">{{ cliente.nombre }}</td>
+              <td class="px-6 py-4 text-sm" :style="{ color: 'var(--color-neutral)' }">{{ cliente.email }}</td>
+              <td class="px-6 py-4 text-sm" :style="{ color: 'var(--color-neutral)' }">{{ cliente.total_reservas }}</td>
+              <td class="px-6 py-4 text-sm font-medium" :style="{ color: 'var(--color-success)' }">{{ cliente.gasto_total.toFixed(2) }}</td>
+              <td class="px-6 py-4 text-sm" :style="{ color: 'var(--color-neutral)' }">{{ new Date(cliente.ultima_visita).toLocaleDateString('es-CO') }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else :style="{ color: 'var(--color-neutral)' }">Sin datos disponibles</div>
+    </div>
+  </div>
+</template>

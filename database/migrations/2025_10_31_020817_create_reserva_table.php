@@ -21,7 +21,6 @@ return new class extends Migration
             $table->time('hora_inicio');
             $table->time('hora_fin');
             $table->text('notas')->nullable();
-            $table->timestamp('fecha_creacion')->useCurrent();
             $table->decimal('total', 10, 2);
             $table->decimal('monto_anticipo', 10, 2)->default(0.00);
             $table->timestamps();

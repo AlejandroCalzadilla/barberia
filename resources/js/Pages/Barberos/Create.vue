@@ -94,21 +94,7 @@ function submit() {
             </div>
           </div>
 
-          <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Calificación promedio</label>
-            <input 
-              v-model.number="form.calificacion_promedio" 
-              type="number" 
-              min="0" 
-              max="5" 
-              step="0.01" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition" 
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
-              :style="{'--tw-ring-color': 'var(--color-primary)'}"
-            />
-            <div v-if="form.errors.calificacion_promedio" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.calificacion_promedio }}</div>
-          </div>
-
+     
           <div>
             <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Estado</label>
             <select 

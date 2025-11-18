@@ -60,5 +60,43 @@ class User extends Authenticatable
     protected $appends = [
         'profile_photo_url',
     ];
+
+    /**
+     * Always load these relations
+     */
+    protected $with = ['cliente', 'barbero'];
+
+    /**
+     * Relación con el modelo Barbero
+     */
+    public function barbero()
+    {
+        return $this->hasOne(Barbero::class, 'id_usuario', 'id');
+    }
+
+    /**
+     * Relación con el modelo Cliente
+     */
+    public function cliente()
+    {
+        return $this->hasOne(Cliente::class, 'id_usuario', 'id');
+    }
+
+
+    public function getRedirectRoute(): string
+    {
+        // Si es cliente → dashboard (catálogo de servicios)
+        if ($this->cliente) {
+            return route('dashboard');
+        }
+        
+        // Si es barbero → dashboard (mis reservas y horario visual)
+        if ($this->barbero) {
+            return route('dashboard');
+        }
+        
+        // Si es admin → dashboard (reportes y gestión)
+        return route('dashboard');
+    }
 }
 

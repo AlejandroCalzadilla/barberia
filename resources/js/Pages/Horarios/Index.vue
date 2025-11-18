@@ -1,17 +1,26 @@
 <script setup>
 import { router, Link, usePage } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { ref } from 'vue'
+import HorarioVisual from '@/Components/HorarioVisual.vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
-  horarios: Object,
+  horarios: [Object, Array],
   barberos: Array,
   filters: Object,
+  isBarbero: Boolean,
 })
 
 const barbero = ref(props.filters?.barbero || '')
 const page = usePage()
 const can = (p) => (page.props?.auth?.permissions || []).includes(p)
+
+const barberoNombre = computed(() => {
+  if (props.isBarbero) {
+    return page.props?.auth?.user?.name || 'Mi'
+  }
+  return ''
+})
 
 function search() {
   router.get(route('horarios.index'), { barbero: barbero.value }, { preserveState: true, replace: true })
@@ -28,8 +37,10 @@ function destroyItem(id) {
   <AppLayout title="Horarios">
     <template #header>
       <div class="flex items-center justify-between">
-        <h2 class="font-semibold text-xl leading-tight" style="color: var(--color-neutral);">Horarios</h2>
-        <Link v-if="can('horarios.create')" :href="route('horarios.create')" 
+        <h2 class="font-semibold text-xl leading-tight" style="color: var(--color-neutral);">
+          {{ isBarbero ? 'Mi Horario' : 'Horarios' }}
+        </h2>
+        <Link v-if="can('horarios.create') && !isBarbero" :href="route('horarios.create')" 
               class="px-3 py-2 text-white rounded hover:opacity-90 transition" 
               style="background-color: var(--color-primary);">
           Nuevo
@@ -39,7 +50,15 @@ function destroyItem(id) {
 
     <div class="py-6">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="shadow sm:rounded-lg p-4" style="background-color: var(--color-base); border: 2px solid var(--color-neutral)">
+        <!-- Vista para barberos - Horario Visual -->
+        <HorarioVisual 
+          v-if="isBarbero" 
+          :horarios="horarios"
+          :barbero-nombre="barberoNombre"
+        />
+
+        <!-- Vista para administradores - Tabla -->
+        <div v-else class="shadow sm:rounded-lg p-4" style="background-color: var(--color-base); border: 2px solid var(--color-neutral)">
           <div class="flex gap-2 mb-4">
             <select 
               v-model="barbero" 
