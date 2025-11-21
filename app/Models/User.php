@@ -85,17 +85,17 @@ class User extends Authenticatable
 
     public function getRedirectRoute(): string
     {
-        // Si es cliente → dashboard (catálogo de servicios)
+        // Si es cliente → catálogo de servicios
         if ($this->cliente) {
-            return route('dashboard');
+            return route('servicios.catalogo');
         }
         
-        // Si es barbero → dashboard (mis reservas y horario visual)
+        // Si es barbero → dashboard
         if ($this->barbero) {
             return route('dashboard');
         }
         
-        // Si es admin → dashboard (reportes y gestión)
+        // Si es admin → dashboard
         return route('dashboard');
     }
 }

@@ -12,8 +12,9 @@ const busqueda = ref('')
 
 onMounted(async () => {
   try {
-    console.log('📌 Cargando servicios desde:', route('servicios.catalogo'))
-    const response = await fetch(route('servicios.catalogo'))
+    console.log('📌 Cargando servicios desde: /api/servicios-catalogo')
+    const response = await fetch('/api/servicios-catalogo')
+    const responsebarberos = await fetch('/api/barberos-disponibles')
     console.log('📌 Response status:', response.status)
     const data = await response.json()
     console.log('📌 Servicios cargados:', data)
@@ -68,19 +69,24 @@ function cerrarModal() {
         class="bg-white dark:bg-gray-800 overflow-hidden shadow sm:rounded-lg hover:shadow-lg transition-shadow cursor-pointer"
         @click="abrirModal(servicio)"
       >
-        <!-- Encabezado con categoría -->
+        <!-- Imagen del servicio -->
+        <div v-if="servicio.imagen" class="w-full h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+          <img 
+            :src="servicio.imagen.startsWith('/') ? servicio.imagen : `/storage/${servicio.imagen}`" 
+            :alt="servicio.nombre"
+            class="w-full h-full object-cover"
+          />
+        </div>
+        <div v-else class="w-full h-48 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
+          <span class="text-gray-400 dark:text-gray-500 text-4xl">📷</span>
+        </div>
+
+        <!-- Encabezado -->
         <div class="p-6">
           <div class="flex items-start justify-between mb-2">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ servicio.nombre }}
             </h3>
-            <span class="px-3 py-1 rounded-full text-xs font-medium" 
-              :style="{ 
-                backgroundColor: 'var(--color-primary)', 
-                color: 'var(--color-base)' 
-              }">
-              {{ servicio.categoria?.nombre }}
-            </span>
           </div>
 
           <!-- Descripción -->
@@ -92,13 +98,13 @@ function cerrarModal() {
           <div class="grid grid-cols-2 gap-4 mb-4">
             <div class="p-3 rounded" style="background-color: var(--color-primary); opacity: 0.1;">
               <p class="text-xs text-gray-600 dark:text-gray-400">Precio</p>
-              <p class="text-lg font-bold" style="color: var(--color-primary);">
+              <p class="text-lg font-bold" style="color: var(--color-neutral);">
                 ${{ servicio.precio }}
               </p>
             </div>
-            <div class="p-3 rounded" style="background-color: var(--color-secondary); opacity: 0.1;">
+            <div class="p-3 rounded" style="background-color: var(--color-primary); opacity: 0.1;">
               <p class="text-xs text-gray-600 dark:text-gray-400">Duración</p>
-              <p class="text-lg font-bold" style="color: var(--color-secondary);">
+              <p class="text-lg font-bold" style="color: var(--color-neutral);">
                 {{ servicio.duracion_minutos }} min
               </p>
             </div>

@@ -38,24 +38,22 @@ Route::get('/', function () {
     ]);
 });
 
-// Rutas públicas para el catálogo de servicios
-Route::get('/servicios-catalogo', function () {
+// Rutas públicas para el catálogo de servicios - API JSON
+Route::get('/api/servicios-catalogo', function () {
     return response()->json(
-        Servicio::with('categoria:id_categoria,nombre')
-            ->orderBy('nombre')
-            ->get()
+        Servicio::get()
     );
-})->name('servicios.catalogo');
+})->name('servicios.catalogo.api');
 
-Route::get('/barberos-disponibles', function () {
+Route::get('/api/barberos-disponibles', function () {
     return response()->json(
-        Barbero::with('user:id,name')
+        Barbero::with('user:id,name', 'horarios')
             ->where('estado', 'activo')
             ->get()
     );
-})->name('barberos.disponibles');
+})->name('barberos.disponibles.api');
 
-Route::get('/horarios-disponibles', function () {
+Route::get('/api/horarios-disponibles', function () {
     $barberoId = request()->integer('barbero_id');
     $fecha = request()->input('fecha');
 
@@ -100,7 +98,7 @@ Route::get('/horarios-disponibles', function () {
     }
 
     return response()->json(array_values(array_unique($horariosDisponibles)));
-})->name('horarios.disponibles');
+})->name('horarios.disponibles.api');
 
 Route::middleware([
     'auth:sanctum',
@@ -110,6 +108,11 @@ Route::middleware([
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
+
+    // Ruta específica para catálogo de servicios (solo clientes)
+    Route::get('/servicios-catalogo', function () {
+        return Inertia::render('Servicios/Catalogo');
+    })->name('servicios.catalogo');
 
     Route::resource('categorias', CategoriaController::class);
     Route::resource('productos', ProductoController::class);

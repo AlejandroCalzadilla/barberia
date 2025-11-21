@@ -30,7 +30,7 @@ onMounted(async () => {
 
 async function cargarBarberos() {
   try {
-    const response = await fetch(route('barberos.disponibles'))
+    const response = await fetch('/api/barberos-disponibles')
     barberos.value = await response.json()
   } catch (error) {
     console.error('Error al cargar barberos:', error)
@@ -48,7 +48,7 @@ async function cargarHorarios() {
   cargandoHorarios.value = true
   try {
     const response = await fetch(
-      route('horarios.disponibles') + `?barbero_id=${formData.value.id_barbero}&fecha=${formData.value.fecha_reserva}`
+      `/api/horarios-disponibles?barbero_id=${formData.value.id_barbero}&fecha=${formData.value.fecha_reserva}`
     )
     horarios.value = await response.json()
   } catch (error) {
