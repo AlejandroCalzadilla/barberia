@@ -20,8 +20,21 @@ const chartType = ref('pagos')
 
 // Gráfico de Pagos Mensuales
 const pagosChartData = computed(() => {
+  console.log('📊 FullReportsChart - pagosData:', props.pagosData)
+  
   if (!props.pagosData || props.pagosData.length === 0) {
-    return { labels: [], datasets: [] }
+    console.warn('⚠️ No hay datos de pagos')
+    return { 
+      labels: ['Sin datos'], 
+      datasets: [{
+        label: 'Pagos Completados',
+        data: [0],
+        borderColor: 'var(--color-success, #10b981)',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        tension: 0.4,
+        fill: true,
+      }] 
+    }
   }
 
   const monthlyData = {}
@@ -31,19 +44,24 @@ const pagosChartData = computed(() => {
     if (!monthlyData[month]) {
       monthlyData[month] = 0
     }
-    monthlyData[month] += pago.monto_total || 0
+    monthlyData[month] += parseFloat(pago.monto_total) || 0
   })
 
-  const labels = Object.keys(monthlyData).slice(-6)
+  console.log('📅 Datos mensuales agrupados:', monthlyData)
+
+  const labels = Object.keys(monthlyData).sort().slice(-6)
   const data = labels.map(m => monthlyData[m])
+
+  console.log('📈 Labels finales:', labels)
+  console.log('💰 Data final:', data)
 
   return {
     labels: labels.map(m => {
       const [year, month] = m.split('-')
-      return new Date(year, month - 1).toLocaleDateString('es-CO', { month: 'short', year: '2-digit' })
+      return new Date(year, month - 1).toLocaleDateString('es-BO', { month: 'short', year: '2-digit' })
     }),
     datasets: [{
-      label: 'Pagos Completados',
+      label: 'Pagos Completados (Bs)',
       data: data,
       borderColor: 'var(--color-success, #10b981)',
       backgroundColor: 'rgba(16, 185, 129, 0.1)',

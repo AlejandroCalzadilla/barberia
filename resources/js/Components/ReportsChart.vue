@@ -12,6 +12,7 @@ const props = defineProps({
 
 const chartType = ref('pagos') // 'pagos' o 'reservas'
 
+/* console.log('props.pagosData:', props.pagosData)
 // Calcular datos para el gráfico de pagos
 const pagosChartData = computed(() => {
   if (!props.pagosData || props.pagosData.length === 0) {
@@ -56,7 +57,7 @@ const pagosChartData = computed(() => {
       fill: true,
     }]
   }
-})
+}) */
 
 // Calcular datos para el gráfico de reservas por estado
 const reservasChartData = computed(() => {

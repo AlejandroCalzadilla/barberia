@@ -12,6 +12,7 @@ use App\Http\Controllers\HorarioController;
 use App\Http\Controllers\ReservaController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\SocialAuthController;
 use App\Models\Servicio;
 use App\Models\Barbero;
 use App\Models\Horario;
@@ -28,6 +29,12 @@ use Carbon\Carbon;
 | contains the "web" middleware group. Now create something great!
 |
 */
+
+// OAuth routes
+Route::get('/auth/{provider}', [SocialAuthController::class, 'redirectToProvider'])
+    ->name('auth.social');
+Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'handleProviderCallback'])
+    ->name('auth.social.callback');
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -48,7 +55,7 @@ Route::get('/api/servicios-catalogo', function () {
 Route::get('/api/barberos-disponibles', function () {
     return response()->json(
         Barbero::with('user:id,name', 'horarios')
-            ->where('estado', 'activo')
+            ->where('estado', 'disponible')
             ->get()
     );
 })->name('barberos.disponibles.api');

@@ -1,20 +1,14 @@
 <script setup>
 import { router, Link, usePage } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { ref } from 'vue'
 
 const props = defineProps({
   clientes: Object,
   filters: Object,
 })
 
-const q = ref(props.filters?.q || '')
 const page = usePage()
 const can = (p) => (page.props?.auth?.permissions || []).includes(p)
-
-function search() {
-  router.get(route('clientes.index'), { q: q.value }, { preserveState: true, replace: true })
-}
 
 function destroyItem(id) {
   if (confirm('¿Eliminar cliente?')) {
@@ -39,23 +33,6 @@ function destroyItem(id) {
     <div class="py-6">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="shadow sm:rounded-lg p-4" style="background-color: var(--color-base); border: 2px solid var(--color-neutral)">
-          <div class="flex gap-2 mb-4">
-            <input 
-              v-model="q" 
-              @keyup.enter="search" 
-              type="text" 
-              placeholder="Buscar por nombre o email" 
-              class="border rounded px-3 py-2 w-full" 
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral);"
-            />
-            <button 
-              @click="search" 
-              class="px-3 py-2 text-white rounded hover:opacity-90 transition"
-              style="background-color: var(--color-secondary);">
-              Buscar
-            </button>
-          </div>
-
           <div class="overflow-x-auto">
             <table class="min-w-full text-sm" style="background-color: var(--color-base);">
               <thead>

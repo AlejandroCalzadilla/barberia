@@ -14,6 +14,12 @@ const props = defineProps({
   distribucionMetodosPago: Array,
 })
 
+console.log('📋 Reportes/Index - Props recibidos:', {
+  pagosData: props.pagosData,
+  reservasData: props.reservasData,
+  ingresosMensuales: props.ingresosMensuales
+})
+
 const fechaInicio = ref(new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0])
 const fechaFin = ref(new Date().toISOString().split('T')[0])
 const filtroAplicado = ref(false)

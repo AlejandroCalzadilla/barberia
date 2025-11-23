@@ -8,11 +8,22 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import ThemeSelector from '@/Components/ThemeSelector.vue';
+import SearchBar from '@/Components/SearchBar.vue';
 import { useTheme } from '@/composables/useTheme.js';
 
 defineProps({
     title: String,
 });
+
+// Estado global de búsqueda
+const globalSearch = ref('')
+
+// Emitir evento de búsqueda para que las vistas puedan escucharlo
+const handleGlobalSearch = (value) => {
+    globalSearch.value = value
+    // Emitir evento personalizado para que las vistas lo escuchen
+    window.dispatchEvent(new CustomEvent('global-search', { detail: value }))
+}
 
 const showingNavigationDropdown = ref(false);
 
@@ -57,10 +68,19 @@ const logout = () => {
                             </div>
 
                             <!-- Navigation Links -->
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex items-center">
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                     Dashboard
                                 </NavLink>
+                                
+                                <!-- Búsqueda Global -->
+                                <div class="flex items-center" style="min-width: 300px;">
+                                    <SearchBar 
+                                        v-model="globalSearch"
+                                        @search="handleGlobalSearch"
+                                        placeholder="Buscar... (Ctrl+F)"
+                                    />
+                                </div>
                                 
                                 <!-- Theme Selector -->
                                 <div class="flex items-center">

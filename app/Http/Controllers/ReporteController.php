@@ -23,6 +23,8 @@ class ReporteController extends Controller
         $pagosData = Pago::where('estado', 'pagado')
             ->orderBy('fecha_pago')
             ->get(['id_pago', 'monto_total', 'fecha_pago', 'estado']);
+          
+        // dd($pagosData);       
 
         $reservasData = Reserva::orderBy('id_reserva')
             ->get(['id_reserva', 'estado']);
@@ -41,6 +43,7 @@ class ReporteController extends Controller
                 COALESCE(SUM(CASE WHEN pago.estado = \'pendiente\' THEN pago.monto_total ELSE 0 END), 0) as pagos_pendientes
             ')
             ->first();
+        //dd($ingresosMensuales);    
 
         // Ranking de barberos
         $rankingBarberosaRaw = Barbero::query()
