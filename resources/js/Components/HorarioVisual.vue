@@ -116,21 +116,21 @@ function getEstadoColor(estado) {
         Resumen Semanal
       </h3>
       <div class="grid grid-cols-3 gap-4">
-        <div class="p-4 rounded" :style="{ backgroundColor: 'var(--color-secondary)', opacity: 0.1 }">
-          <p class="text-sm" :style="{ color: 'var(--color-neutral)' }">Días Asignados</p>
-          <p class="text-2xl font-bold mt-1" :style="{ color: 'var(--color-primary)' }">
+        <div class="p-4 rounded" :style="{ backgroundColor: 'var(--color-secondary)' }">
+          <p class="text-sm" :style="{ color: 'var(--color-base)' }">Días Asignados</p>
+          <p class="text-2xl font-bold mt-1" :style="{ color: 'var(--color-base)' }">
             {{ diasDetalles.filter(d => d.horario).length }}
           </p>
         </div>
-        <div class="p-4 rounded" :style="{ backgroundColor: 'var(--color-success)', opacity: 0.1 }">
-          <p class="text-sm" :style="{ color: 'var(--color-neutral)' }">Días Activos</p>
-          <p class="text-2xl font-bold mt-1" :style="{ color: 'var(--color-success)' }">
+        <div class="p-4 rounded" :style="{ backgroundColor: 'var(--color-success)' }">
+          <p class="text-sm" :style="{ color: 'var(--color-base)' }">Días Activos</p>
+          <p class="text-2xl font-bold mt-1" :style="{ color: 'var(--color-base)' }">
             {{ diasDetalles.filter(d => d.horario?.estado === 'activo').length }}
           </p>
         </div>
-        <div class="p-4 rounded" :style="{ backgroundColor: 'var(--color-error)', opacity: 0.1 }">
-          <p class="text-sm" :style="{ color: 'var(--color-neutral)' }">Horas Totales</p>
-          <p class="text-2xl font-bold mt-1" :style="{ color: 'var(--color-error)' }">
+        <div class="p-4 rounded" :style="{ backgroundColor: 'var(--color-error)' }">
+          <p class="text-sm" :style="{ color: 'var(--color-base)' }">Horas Totales</p>
+          <p class="text-2xl font-bold mt-1" :style="{ color: 'var(--color-base)' }">
             {{ totalHoras }}h
           </p>
         </div>

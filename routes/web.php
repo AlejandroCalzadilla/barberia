@@ -83,6 +83,7 @@ Route::middleware([
     Route::resource('clientes', ClienteController::class);
     Route::resource('horarios', HorarioController::class);
     Route::resource('reservas', ReservaController::class);
+    Route::get('/api/reservas/horarios-disponibles', [ReservaController::class, 'horariosDisponibles'])->name('reservas.horarios-disponibles');
     Route::resource('pagos', PagoController::class);
     Route::get('/pagar-reserva', [PagoController::class, 'pagarReserva'])->name('pagos.pagar-reserva');
     

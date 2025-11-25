@@ -376,12 +376,12 @@ const visibleLinks = computed(() => links.value.filter(link => !link.perm || can
                         </div>
 
                         <!-- Navigation Links -->
-                        <nav class="flex-1 px-3 space-y-1" :class="{ 'kids-pattern-bg': isKidsTheme }" :style="{
+                        <nav class="flex-1 px-3 space-y-2" :class="{ 'kids-pattern-bg': isKidsTheme }" :style="{
                             backgroundColor: isKidsTheme ? undefined : 'var(--color-sidebarBg)'
                         }">
                             <template v-for="link in visibleLinks" :key="link.key">
                                 <Link :href="route(link.route)" :class="[
-                                    'flex items-center px-3 py-3 rounded-lg transition-all duration-200',
+                                    'flex items-center px-2 py-2 rounded-lg transition-all duration-200',
                                     { 'kids-pattern-bg': isKidsTheme && !route().current(link.route + '*') },
                                     route().current(link.route + '*')
                                         ? 'font-semibold shadow-md'

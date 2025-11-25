@@ -1,6 +1,8 @@
 <script setup>
+import { ref, watch } from 'vue'
 import { router, Link, useForm } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
+import axios from 'axios'
 
 const props = defineProps({
   reserva: Object,
@@ -10,23 +12,48 @@ const props = defineProps({
 })
 
 const form = useForm({
-  id_cliente: props.reserva.id_cliente ?? '',
-  id_barbero: props.reserva.id_barbero ?? '',
-  id_servicio: props.reserva.id_servicio ?? '',
   fecha_reserva: props.reserva.fecha_reserva ?? '',
-  hora_inicio: props.reserva.hora_inicio ?? '09:00',
-  hora_fin: props.reserva.hora_fin ?? '10:00',
-  notas: props.reserva.notas ?? '',
-  precio_servicio: props.reserva.precio_servicio ?? 0,
-  monto_anticipo: props.reserva.monto_anticipo ?? 0,
-  porcentaje_anticipo: props.reserva.porcentaje_anticipo ?? 0,
-  estado: props.reserva.estado ?? 'pendiente_pago',
+  hora_inicio: props.reserva.hora_inicio ?? '',
+  estado: props.reserva.estado ?? 'confirmada',
 })
 
-function onServicioChange() {
-  const s = props.servicios.find(x => x.id_servicio === form.id_servicio)
-  if (s && s.precio != null) form.precio_servicio = s.precio
+const horariosDisponibles = ref([])
+const cargandoHorarios = ref(false)
+
+async function cargarHorariosDisponibles() {
+  if (!props.reserva.id_barbero || !form.fecha_reserva) {
+    horariosDisponibles.value = []
+    return
+  }
+
+  cargandoHorarios.value = true
+  try {
+    const response = await axios.get(route('reservas.horarios-disponibles'), {
+      params: {
+        barbero_id: props.reserva.id_barbero,
+        fecha: form.fecha_reserva,
+        servicio_id: props.reserva.id_servicio || null,
+      }
+    })
+    horariosDisponibles.value = response.data.horarios
+    
+    // Limpiar hora seleccionada si ya no está disponible
+    if (form.hora_inicio && !horariosDisponibles.value.find(h => h.hora === form.hora_inicio)) {
+      form.hora_inicio = ''
+    }
+  } catch (error) {
+    console.error('Error al cargar horarios:', error)
+    horariosDisponibles.value = []
+  } finally {
+    cargandoHorarios.value = false
+  }
 }
+
+// Cargar horarios al montar y cuando cambie la fecha
+watch(() => form.fecha_reserva, cargarHorariosDisponibles)
+
+// Cargar horarios iniciales
+cargarHorariosDisponibles()
 
 function submit() {
   form.put(route('reservas.update', props.reserva.id_reserva))
@@ -50,150 +77,116 @@ function submit() {
     <div class="py-6">
       <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
         <div class="shadow sm:rounded-lg p-6 grid gap-4 md:grid-cols-2" style="background-color: var(--color-base);">
-          <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Cliente</label>
-            <select 
-              v-model="form.id_cliente" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
-              :style="{'--tw-ring-color': 'var(--color-primary)'}"
-            >
-              <option v-for="c in clientes" :key="c.id_cliente" :value="c.id_cliente">{{ c.user?.name }}</option>
-            </select>
-            <div v-if="form.errors.id_cliente" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.id_cliente }}</div>
+          
+          <!-- Información de solo lectura -->
+          <div class="md:col-span-2 p-4 rounded border" style="background-color: var(--color-base-light); border-color: var(--color-primary);">
+            <h3 class="font-semibold mb-3 text-lg" style="color: var(--color-primary);">📋 Información de la reserva</h3>
+            <div class="grid gap-3 md:grid-cols-2 text-sm" style="color: var(--color-neutral);">
+              <div>
+                <span class="font-medium">Cliente:</span>
+                <span class="ml-2">{{ reserva.cliente?.user?.name }}</span>
+              </div>
+              <div>
+                <span class="font-medium">Barbero:</span>
+                <span class="ml-2">{{ reserva.barbero?.user?.name }}</span>
+              </div>
+              <div>
+                <span class="font-medium">Servicio:</span>
+                <span class="ml-2">{{ reserva.servicio?.nombre }}</span>
+              </div>
+            </div>
           </div>
 
+          <!-- Campos editables: Fecha y Horario -->
           <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Barbero</label>
-            <select 
-              v-model="form.id_barbero" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
-              :style="{'--tw-ring-color': 'var(--color-primary)'}"
-            >
-              <option v-for="b in barberos" :key="b.id_barbero" :value="b.id_barbero">{{ b.user?.name }}</option>
-            </select>
-            <div v-if="form.errors.id_barbero" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.id_barbero }}</div>
-          </div>
-
-          <div class="md:col-span-2">
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Servicio</label>
-            <select 
-              v-model="form.id_servicio" 
-              @change="onServicioChange" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
-              :style="{'--tw-ring-color': 'var(--color-primary)'}"
-            >
-              <option v-for="s in servicios" :key="s.id_servicio" :value="s.id_servicio">{{ s.nombre }}</option>
-            </select>
-            <div v-if="form.errors.id_servicio" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.id_servicio }}</div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Fecha</label>
+            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Fecha *</label>
             <input 
               v-model="form.fecha_reserva" 
               type="date" 
               class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral);"
               :style="{'--tw-ring-color': 'var(--color-primary)'}"
             />
             <div v-if="form.errors.fecha_reserva" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.fecha_reserva }}</div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Hora inicio</label>
-            <input 
+            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Hora de inicio *</label>
+            <select 
               v-model="form.hora_inicio" 
-              type="time" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+              :disabled="cargandoHorarios || horariosDisponibles.length === 0"
+              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral);"
               :style="{'--tw-ring-color': 'var(--color-primary)'}"
-            />
+            >
+              <option value="" disabled>{{ cargandoHorarios ? 'Cargando horarios...' : horariosDisponibles.length === 0 ? 'No hay horarios disponibles' : 'Seleccione...' }}</option>
+              <option v-for="h in horariosDisponibles" :key="h.hora" :value="h.hora">{{ h.label }}</option>
+            </select>
             <div v-if="form.errors.hora_inicio" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.hora_inicio }}</div>
           </div>
 
-          <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Hora fin</label>
-            <input 
-              v-model="form.hora_fin" 
-              type="time" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
-              :style="{'--tw-ring-color': 'var(--color-primary)'}"
-            />
-            <div v-if="form.errors.hora_fin" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.hora_fin }}</div>
+          <!-- Información de solo lectura (continuación) -->
+          <div class="md:col-span-2 p-4 rounded border" style="background-color: var(--color-base-light); border-color: var(--color-primary);">
+            <h3 class="font-semibold mb-3 text-lg" style="color: var(--color-primary);">💰 Información de pago</h3>
+            <div class="grid gap-3 md:grid-cols-2 text-sm" style="color: var(--color-neutral);">
+              <div>
+                <span class="font-medium">Duración:</span>
+                <span class="ml-2">{{ reserva.hora_inicio }} - {{ reserva.hora_fin }}</span>
+              </div>
+              <div>
+                <span class="font-medium">Total:</span>
+                <span class="ml-2 font-semibold" style="color: var(--color-primary);">Bs. {{ Number(reserva.total).toFixed(2) }}</span>
+              </div>
+              <div>
+                <span class="font-medium">Anticipo (50%):</span>
+                <span class="ml-2">Bs. {{ Number(reserva.monto_anticipo).toFixed(2) }}</span>
+              </div>
+              <div v-if="reserva.notas" class="md:col-span-2">
+                <span class="font-medium">Notas:</span>
+                <p class="ml-2 mt-1 text-gray-600">{{ reserva.notas }}</p>
+              </div>
+            </div>
           </div>
 
+          <!-- Pagos relacionados -->
+          <div v-if="reserva.pagos?.length" class="md:col-span-2 p-4 rounded border" style="background-color: var(--color-base-light); border-color: var(--color-primary);">
+            <h3 class="font-semibold mb-3 text-lg" style="color: var(--color-primary);">💳 Pagos</h3>
+            <div class="space-y-2">
+              <div v-for="pago in reserva.pagos" :key="pago.id_pago" class="flex justify-between items-center p-2 rounded" style="background-color: var(--color-base);">
+                <div class="text-sm" style="color: var(--color-neutral);">
+                  <span class="font-medium capitalize">{{ pago.tipo_pago?.replace('_', ' ') }}</span>
+                  <span class="ml-2">- {{ pago.metodo_pago }}</span>
+                  <span v-if="pago.fecha_pago" class="ml-2 text-xs opacity-75">{{ new Date(pago.fecha_pago).toLocaleDateString() }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold">Bs. {{ Number(pago.monto_total).toFixed(2) }}</span>
+                  <span 
+                    class="px-2 py-1 rounded text-xs font-medium"
+                    :style="{
+                      backgroundColor: pago.estado === 'pagado' ? 'var(--color-primary)' : 'var(--color-warning)',
+                      color: 'white'
+                    }"
+                  >
+                    {{ pago.estado }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Campo editable: Estado -->
           <div class="md:col-span-2">
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Notas</label>
-            <textarea 
-              v-model="form.notas" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
-              :style="{'--tw-ring-color': 'var(--color-primary)'}"
-            ></textarea>
-            <div v-if="form.errors.notas" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.notas }}</div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Precio servicio</label>
-            <input 
-              v-model.number="form.precio_servicio" 
-              type="number" 
-              step="0.01" 
-              min="0" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
-              :style="{'--tw-ring-color': 'var(--color-primary)'}"
-            />
-            <div v-if="form.errors.precio_servicio" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.precio_servicio }}</div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Monto anticipo</label>
-            <input 
-              v-model.number="form.monto_anticipo" 
-              type="number" 
-              step="0.01" 
-              min="0" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
-              :style="{'--tw-ring-color': 'var(--color-primary)'}"
-            />
-            <div v-if="form.errors.monto_anticipo" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.monto_anticipo }}</div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">% Anticipo</label>
-            <input 
-              v-model.number="form.porcentaje_anticipo" 
-              type="number" 
-              step="0.01" 
-              min="0" 
-              max="100" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
-              :style="{'--tw-ring-color': 'var(--color-primary)'}"
-            />
-            <div v-if="form.errors.porcentaje_anticipo" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.porcentaje_anticipo }}</div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Estado</label>
+            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Estado de la reserva *</label>
             <select 
               v-model="form.estado" 
               class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral);"
               :style="{'--tw-ring-color': 'var(--color-primary)'}"
             >
-              <option value="pendiente_pago">Pendiente de pago</option>
-              <option value="confirmada">Confirmada</option>
-              <option value="en_proceso">En proceso</option>
-              <option value="completada">Completada</option>
-              <option value="cancelada">Cancelada</option>
-              <option value="no_asistio">No asistió</option>
+              <option value="confirmada">✅ Confirmada</option>
+              <option value="completada">✔️ Completada</option>
+              <option value="cancelada">❌ Cancelada</option>
+              <option value="no_asistio">👤 No asistió</option>
             </select>
             <div v-if="form.errors.estado" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.estado }}</div>
           </div>
