@@ -1,8 +1,9 @@
 <script setup>
-import { router, Link, usePage } from '@inertiajs/vue3'
+import { router, Link } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import ReservasCalendario from '@/Components/ReservasCalendario.vue'
 import { ref } from 'vue'
+import { useRoles } from '@/composables/useRoles.js'
 
 const props = defineProps({
   reservas: Object,
@@ -18,8 +19,7 @@ const cliente = ref(props.filters?.cliente || '')
 const barbero = ref(props.filters?.barbero || '')
 const estado = ref(props.filters?.estado || '')
 const fecha = ref(props.filters?.fecha || '')
-const page = usePage()
-const can = (p) => (page.props?.auth?.permissions || []).includes(p)
+const { isPropietario, isBarbero: isUserBarbero } = useRoles()
 
 function search() {
   router.get(route('reservas.index'), { cliente: cliente.value, barbero: barbero.value, estado: estado.value, fecha: fecha.value }, { preserveState: true, replace: true })
@@ -39,7 +39,7 @@ function destroyItem(id) {
         <h2 class="font-semibold text-xl leading-tight" style="color: var(--color-neutral);">
           {{ isBarbero ? 'Mis Reservas' : 'Reservas' }}
         </h2>
-        <Link v-if="can('reservas.create') && !isBarbero" :href="route('reservas.create')" 
+        <Link v-if="isPropietario && !isBarbero" :href="route('reservas.create')" 
               class="px-3 py-2 text-white rounded hover:opacity-90 transition" 
               style="background-color: var(--color-primary);">
           Nueva
@@ -130,14 +130,14 @@ function destroyItem(id) {
                   </td>
                   <td class="p-2 flex gap-2">
                     <Link 
-                      v-if="can('reservas.update')" 
+                      v-if="isPropietario || isUserBarbero" 
                       :href="route('reservas.edit', r.id_reserva)" 
                       class="hover:opacity-70 transition"
                       style="color: var(--color-primary);">
                       Editar
                     </Link>
                     <button 
-                      v-if="can('reservas.delete')" 
+                      v-if="isPropietario" 
                       @click="destroyItem(r.id_reserva)" 
                       class="hover:opacity-70 transition"
                       style="color: var(--color-error);">

@@ -27,10 +27,12 @@ class UsersSeeder extends Seeder
                 'direccion' => 'Calle Principal 123',
                 'estado' => 'activo',
                 'tipo_usuario' => 'propietario',
+                'is_propietario' => true,
+                'is_barbero' => false,
+                'is_cliente' => false,
                 'remember_token' => Str::random(10),
             ]
         );
-        $owner->assignRole('propietario');
 
         // Clientes
         $clientes = [
@@ -66,10 +68,12 @@ class UsersSeeder extends Seeder
                     'direccion' => $cliente['direccion'],
                     'estado' => 'activo',
                     'tipo_usuario' => 'cliente',
+                    'is_propietario' => false,
+                    'is_barbero' => false,
+                    'is_cliente' => true,
                     'remember_token' => Str::random(10),
                 ]
             );
-            $user->assignRole('cliente');
             
             Cliente::firstOrCreate(
                 ['id_usuario' => $user->id],

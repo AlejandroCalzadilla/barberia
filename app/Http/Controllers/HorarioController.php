@@ -11,10 +11,10 @@ class HorarioController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:horarios.view')->only(['index']);
+       /*  $this->middleware('permission:horarios.view')->only(['index']);
         $this->middleware('permission:horarios.create')->only(['create','store']);
         $this->middleware('permission:horarios.update')->only(['edit','update']);
-        $this->middleware('permission:horarios.delete')->only(['destroy']);
+        $this->middleware('permission:horarios.delete')->only(['destroy']); */
     }
 
     public function index(Request $request)

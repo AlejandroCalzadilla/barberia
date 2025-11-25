@@ -1,7 +1,8 @@
 <script setup>
-import { router, Link, usePage } from '@inertiajs/vue3'
+import { router, Link } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { ref, computed } from 'vue'
+import { useRoles } from '@/composables/useRoles.js'
 
 const props = defineProps({
   pagos: Object,
@@ -27,8 +28,7 @@ const tipo = ref(props.filters?.tipo || '')
 const fecha = ref(props.filters?.fecha || '')
 const searchQuery = ref(props.filters?.search || '')
 
-const page = usePage()
-const can = (p) => (page.props?.auth?.permissions || []).includes(p)
+const { isPropietario, isBarbero } = useRoles()
 
 const filteredReservas = computed(() => {
   if (!searchQuery.value) return props.reservas.slice(0, 5)
@@ -301,7 +301,7 @@ function getTipoPagoLabel(tipo) {
                   <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div class="flex items-center justify-end space-x-2">
                       <Link 
-                        v-if="can('pagos.update')" 
+                        v-if="isPropietario || isBarbero" 
                         :href="route('pagos.edit', p.id_pago)" 
                         class="hover:opacity-75 transition"
                         title="Editar"
@@ -312,7 +312,7 @@ function getTipoPagoLabel(tipo) {
                         </svg>
                       </Link>
                       <button 
-                        v-if="can('pagos.delete')" 
+                        v-if="isPropietario" 
                         @click="destroyItem(p.id_pago)" 
                         class="hover:opacity-75 transition"
                         title="Eliminar"

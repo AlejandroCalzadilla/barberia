@@ -1,25 +1,33 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ServiciosCatalogo from '@/Components/ServiciosCatalogo.vue';
-import { Link, usePage } from '@inertiajs/vue3'
+import { Link } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import { useTheme } from '@/composables/useTheme'
+import { useRoles } from '@/composables/useRoles.js'
 
-const page = usePage()
-const permissions = computed(() => page.props?.auth?.permissions || [])
-const can = (p) => permissions.value.includes(p)
-const isCliente = computed(() => page.props?.auth?.user?.cliente)
+const { isPropietario, isBarbero, isCliente: isUserCliente } = useRoles()
 
 const { theme, availableThemes, setTheme } = useTheme()
 
 const quickLinks = [
-  { key: 'categorias', label: 'Categorías', route: 'categorias.index', perm: 'categorias.view', icon: '📁' },
-  { key: 'productos', label: 'Productos', route: 'productos.index', perm: 'productos.view', icon: '📦' },
-  { key: 'servicios', label: 'Servicios', route: 'servicios.index', perm: 'servicios.view', icon: '✂️' },
-  { key: 'barberos', label: 'Barberos', route: 'barberos.index', perm: 'barberos.view', icon: '👤' },
+  { key: 'categorias', label: 'Categorías', route: 'categorias.index', roles: ['propietario'], icon: '📁' },
+  { key: 'productos', label: 'Productos', route: 'productos.index', roles: ['propietario'], icon: '📦' },
+  { key: 'servicios', label: 'Servicios', route: 'servicios.index', roles: ['propietario'], icon: '✂️' },
+  { key: 'barberos', label: 'Barberos', route: 'barberos.index', roles: ['propietario'], icon: '👤' },
 ]
 
-const visibleQuickLinks = computed(() => quickLinks.filter(link => can(link.perm)))
+const hasRole = (roles) => {
+  if (!roles || roles.length === 0) return true
+  return roles.some(role => {
+    if (role === 'propietario') return isPropietario.value
+    if (role === 'barbero') return isBarbero.value
+    if (role === 'cliente') return isUserCliente.value
+    return false
+  })
+}
+
+const visibleQuickLinks = computed(() => quickLinks.filter(link => hasRole(link.roles)))
 
 
 </script>
@@ -33,7 +41,7 @@ const visibleQuickLinks = computed(() => quickLinks.filter(link => can(link.perm
         </template>
 
         <!-- Vista para clientes - Catálogo de servicios -->
-        <ServiciosCatalogo v-if="isCliente" />
+        <ServiciosCatalogo v-if="isUserCliente" />
 
         <!-- Vista para admin - Contenido del Dashboard -->
         <div v-else class="p-6">

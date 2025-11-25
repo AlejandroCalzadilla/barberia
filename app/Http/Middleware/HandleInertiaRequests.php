@@ -39,36 +39,23 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
         
         $userData = null;
-        $rolesData = [];
-        $permissionsData = [];
         
         if ($user) {
             $userData = [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'profile_photo_url' => $user->profile_photo_url,
+                // Nuevos campos de roles booleanos
+                'is_propietario' => (bool) $user->is_propietario,
+                'is_barbero' => (bool) $user->is_barbero,
+                'is_cliente' => (bool) $user->is_cliente,
             ];
-            
-            try {
-                $rolesData = $user->getRoleNames()->toArray();
-            } catch (\Exception $e) {
-                \Log::warning('Error getting roles: ' . $e->getMessage());
-                $rolesData = [];
-            }
-            
-            try {
-                $permissionsData = $user->getAllPermissions()->pluck('name')->toArray();
-            } catch (\Exception $e) {
-                \Log::warning('Error getting permissions: ' . $e->getMessage());
-                $permissionsData = [];
-            }
         }
         
         return array_merge(parent::share($request), [
             'auth' => [
                 'user' => $userData,
-                'roles' => $rolesData,
-                'permissions' => $permissionsData,
             ],
         ]);
     }

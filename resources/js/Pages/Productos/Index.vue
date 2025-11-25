@@ -1,7 +1,8 @@
 <script setup>
-import { router, Link, usePage } from '@inertiajs/vue3'
+import { router, Link } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { ref } from 'vue'
+import { useRoles } from '@/composables/useRoles.js'
 
 const props = defineProps({
   productos: Object,
@@ -11,8 +12,7 @@ const props = defineProps({
 
 const q = ref(props.filters?.q || '')
 const categoria = ref(props.filters?.categoria || '')
-const page = usePage()
-const can = (p) => (page.props?.auth?.permissions || []).includes(p)
+const { isPropietario } = useRoles()
 
 function search() {
   router.get(route('productos.index'), { q: q.value, categoria: categoria.value }, { preserveState: true, replace: true })
@@ -30,7 +30,7 @@ function destroyItem(id) {
     <template #header>
       <div class="flex items-center justify-between">
         <h2 class="font-semibold text-xl leading-tight" style="color: var(--color-neutral);">Productos</h2>
-        <Link v-if="can('productos.create')" :href="route('productos.create')" 
+        <Link v-if="isPropietario" :href="route('productos.create')" 
               class="px-3 py-2 text-white rounded hover:opacity-90 transition" 
               style="background-color: var(--color-primary);">
           Nuevo
@@ -92,14 +92,14 @@ function destroyItem(id) {
                   </td>
                   <td class="p-2 flex gap-2">
                     <Link 
-                      v-if="can('productos.update')" 
+                      v-if="isPropietario" 
                       :href="route('productos.edit', p.id_producto)" 
                       class="hover:opacity-70 transition"
                       style="color: var(--color-primary);">
                       Editar
                     </Link>
                     <button 
-                      v-if="can('productos.delete')" 
+                      v-if="isPropietario" 
                       @click="destroyItem(p.id_producto)" 
                       class="hover:opacity-70 transition"
                       style="color: var(--color-error);">

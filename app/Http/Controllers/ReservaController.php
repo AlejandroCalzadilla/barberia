@@ -16,10 +16,10 @@ class ReservaController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:reservas.view')->only(['index']);
+       /*  $this->middleware('permission:reservas.view')->only(['index']);
         $this->middleware('permission:reservas.create')->only(methods: ['create','store']);
         $this->middleware('permission:reservas.update')->only(['edit','update']);
-        $this->middleware('permission:reservas.delete')->only(['destroy']);
+        $this->middleware('permission:reservas.delete')->only(['destroy']); */
     }
 
     public function index(Request $request)

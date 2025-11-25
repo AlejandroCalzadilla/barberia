@@ -12,10 +12,10 @@ class UsuarioController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:usuarios.view')->only(['index']);
+       /*  $this->middleware('permission:usuarios.view')->only(['index']);
         $this->middleware('permission:usuarios.create')->only(['create','store']);
         $this->middleware('permission:usuarios.update')->only(['edit','update']);
-        $this->middleware('permission:usuarios.delete')->only(['destroy']);
+        $this->middleware('permission:usuarios.delete')->only(['destroy']); */
     }
 
     public function index(Request $request)

@@ -74,24 +74,33 @@ Route::middleware([
     // Ruta específica para catálogo de servicios (solo clientes)
     Route::get('/servicios-catalogo', function () {
         return Inertia::render('Servicios/Catalogo');
-    })->name('servicios.catalogo');
+    })->middleware('role:cliente')->name('servicios.catalogo');
 
-    Route::resource('categorias', CategoriaController::class);
-    Route::resource('productos', ProductoController::class);
-    Route::resource('servicios', ServicioController::class);
-    Route::resource('barberos', BarberoController::class);
-    Route::resource('clientes', ClienteController::class);
-    Route::resource('horarios', HorarioController::class);
-    Route::resource('reservas', ReservaController::class);
-    Route::get('/api/reservas/horarios-disponibles', [ReservaController::class, 'horariosDisponibles'])->name('reservas.horarios-disponibles');
-    Route::resource('pagos', PagoController::class);
+    // Rutas solo para propietario
+    Route::middleware('role:propietario')->group(function () {
+        Route::resource('categorias', CategoriaController::class);
+        Route::resource('productos', ProductoController::class);
+        Route::resource('servicios', ServicioController::class);
+        Route::resource('barberos', BarberoController::class);
+        Route::resource('clientes', ClienteController::class);
+        Route::resource('usuarios', UsuarioController::class);
+        Route::resource('pagos', PagoController::class);
+        Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+    });
+
+    // Rutas para propietario y barbero
+    Route::middleware('role:propietario,barbero')->group(function () {
+        Route::resource('horarios', HorarioController::class);
+        Route::resource('reservas', ReservaController::class);
+        Route::get('/api/reservas/horarios-disponibles', [ReservaController::class, 'horariosDisponibles'])->name('reservas.horarios-disponibles');
+        
+    });
+
+    // Rutas para todos (clientes también pueden pagar reservas)
     Route::get('/pagar-reserva', [PagoController::class, 'pagarReserva'])->name('pagos.pagar-reserva');
-    
+
     // Rutas para PagoFácil (requieren autenticación)
     Route::post('/api/pago-facil/generar-qr', [PagoFacilController::class, 'generarQR'])->name('pagofacil.generar-qr');
     Route::post('/api/pago-facil/consultar-estado', [PagoFacilController::class, 'consultarEstado'])->name('pagofacil.consultar-estado');
     Route::get('/api/pagos/{id}/estado', [PagoController::class, 'obtenerEstado'])->name('pagos.estado');
-    
-    Route::resource('usuarios', UsuarioController::class);
-    Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
 });

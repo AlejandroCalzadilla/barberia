@@ -10,10 +10,10 @@ class CategoriaController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:categorias.view')->only(['index']);
+       /*  $this->middleware('permission:categorias.view')->only(['index']);
         $this->middleware('permission:categorias.create')->only(['create','store']);
         $this->middleware('permission:categorias.update')->only(['edit','update']);
-        $this->middleware('permission:categorias.delete')->only(['destroy']);
+        $this->middleware('permission:categorias.delete')->only(['destroy']); */
     }
 
     public function index(Request $request)

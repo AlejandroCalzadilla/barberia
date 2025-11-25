@@ -11,10 +11,10 @@ class ClienteController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:clientes.view')->only(['index']);
+       /*  $this->middleware('permission:clientes.view')->only(['index']);
         $this->middleware('permission:clientes.create')->only(['create','store']);
         $this->middleware('permission:clientes.update')->only(['edit','update']);
-        $this->middleware('permission:clientes.delete')->only(['destroy']);
+        $this->middleware('permission:clientes.delete')->only(['destroy']); */
     }
 
     public function index(Request $request)

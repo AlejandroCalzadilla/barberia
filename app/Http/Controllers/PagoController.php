@@ -15,10 +15,10 @@ class PagoController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:pagos.view')->only(['index']);
+       /*  $this->middleware('permission:pagos.view')->only(['index']);
         $this->middleware('permission:pagos.create')->only(['create','store']);
         $this->middleware('permission:pagos.update')->only(['edit','update']);
-        $this->middleware('permission:pagos.delete')->only(['destroy']);
+        $this->middleware('permission:pagos.delete')->only(['destroy']); */
     }
 
     public function index(Request $request)

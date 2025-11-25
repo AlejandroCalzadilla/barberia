@@ -56,12 +56,12 @@ class BarberoSeeder extends Seeder
                     'direccion' => $barberoData['direccion'],
                     'estado' => 'activo',
                     'tipo_usuario' => 'barbero',
+                    'is_propietario' => false,
+                    'is_barbero' => true,
+                    'is_cliente' => false,
                     'remember_token' => Str::random(10),
                 ]
             );
-
-            // Asignar rol de barbero
-            $user->assignRole('barbero');
 
             // Descargar imagen de Picsum
             try {

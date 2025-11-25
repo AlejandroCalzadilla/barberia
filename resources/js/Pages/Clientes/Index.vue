@@ -1,14 +1,14 @@
 <script setup>
-import { router, Link, usePage } from '@inertiajs/vue3'
+import { router, Link } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
+import { useRoles } from '@/composables/useRoles.js'
 
 const props = defineProps({
   clientes: Object,
   filters: Object,
 })
 
-const page = usePage()
-const can = (p) => (page.props?.auth?.permissions || []).includes(p)
+const { isPropietario } = useRoles()
 
 function destroyItem(id) {
   if (confirm('¿Eliminar cliente?')) {
@@ -22,7 +22,7 @@ function destroyItem(id) {
     <template #header>
       <div class="flex items-center justify-between">
         <h2 class="font-semibold text-xl leading-tight" style="color: var(--color-neutral);">Clientes</h2>
-        <Link v-if="can('clientes.create')" :href="route('clientes.create')" 
+        <Link v-if="isPropietario" :href="route('clientes.create')" 
               class="px-3 py-2 text-white rounded hover:opacity-90 transition" 
               style="background-color: var(--color-primary);">
           Nuevo
@@ -52,14 +52,14 @@ function destroyItem(id) {
                   <td class="p-2" style="color: var(--color-neutral);">{{ c.fecha_nacimiento }}</td>
                   <td class="p-2 flex gap-2">
                     <Link 
-                      v-if="can('clientes.update')" 
+                      v-if="isPropietario" 
                       :href="route('clientes.edit', c.id_cliente)" 
                       class="hover:opacity-70 transition"
                       style="color: var(--color-primary);">
                       Editar
                     </Link>
                     <button 
-                      v-if="can('clientes.delete')" 
+                      v-if="isPropietario" 
                       @click="destroyItem(c.id_cliente)" 
                       class="hover:opacity-70 transition"
                       style="color: var(--color-error);">

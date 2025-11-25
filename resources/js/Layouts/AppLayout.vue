@@ -45,26 +45,37 @@ const logout = () => {
 
 // Sidebar
 const page = usePage()
-const permissions = computed(() => page.props?.auth?.permissions || [])
-const can = (p) => permissions.value.includes(p)
-const isCliente = computed(() => page.props?.auth?.user?.cliente)
+const user = computed(() => page.props?.auth?.user || {})
+const isPropietario = computed(() => user.value?.is_propietario || false)
+const isBarbero = computed(() => user.value?.is_barbero || false)
+const isCliente = computed(() => user.value?.is_cliente || false)
 const sidebarOpen = ref(true)
 
 const links = computed(() => [
-    { key: 'dashboard', label: 'Dashboard', route: 'dashboard', perm: null, icon: '🏠' },
-    { key: 'reportes', label: 'Reportes', route: 'reportes.index', perm: 'pagos.view', icon: '📊' },
-    { key: 'categorias', label: 'Categorías', route: 'categorias.index', perm: 'categorias.view', icon: '📁' },
-    { key: 'productos', label: 'Productos', route: 'productos.index', perm: 'productos.view', icon: '📦' },
-    { key: 'servicios', label: 'Servicios', route: 'servicios.index', perm: 'servicios.view', icon: '✂️' },
-    { key: 'barberos', label: 'Barberos', route: 'barberos.index', perm: 'barberos.view', icon: '👤' },
-    { key: 'clientes', label: 'Clientes', route: 'clientes.index', perm: 'clientes.view', icon: '👥' },
-    { key: 'horarios', label: 'Horarios', route: 'horarios.index', perm: 'horarios.view', icon: '🕐' },
-    { key: 'reservas', label: 'Reservas', route: 'reservas.index', perm: 'reservas.view', icon: '📅' },
-    { key: 'pagos', label: 'Pagos', route: 'pagos.index', perm: 'pagos.view', icon: '💰' },
-    { key: 'usuarios', label: 'Usuarios', route: 'usuarios.index', perm: 'usuarios.view', icon: '👨‍💼' },
+    { key: 'dashboard', label: 'Dashboard', route: 'dashboard', roles: ['propietario', 'barbero', 'cliente'], icon: '🏠' },
+    { key: 'reportes', label: 'Reportes', route: 'reportes.index', roles: ['propietario'], icon: '📊' },
+    { key: 'categorias', label: 'Categorías', route: 'categorias.index', roles: ['propietario'], icon: '📁' },
+    { key: 'productos', label: 'Productos', route: 'productos.index', roles: ['propietario'], icon: '📦' },
+    { key: 'servicios', label: 'Servicios', route: 'servicios.index', roles: ['propietario'], icon: '✂️' },
+    { key: 'barberos', label: 'Barberos', route: 'barberos.index', roles: ['propietario'], icon: '👤' },
+    { key: 'clientes', label: 'Clientes', route: 'clientes.index', roles: ['propietario'], icon: '👥' },
+    { key: 'horarios', label: 'Horarios', route: 'horarios.index', roles: ['propietario','barbero'], icon: '🕐' },
+    { key: 'reservas', label: 'Reservas', route: 'reservas.index', roles: ['propietario', 'barbero'], icon: '📅' },
+    { key: 'pagos', label: 'Pagos', route: 'pagos.index', roles: ['propietario'], icon: '💰' },
+    { key: 'usuarios', label: 'Usuarios', route: 'usuarios.index', roles: ['propietario'], icon: '👨‍💼' },
 ])
 
-const visibleLinks = computed(() => links.value.filter(link => !link.perm || can(link.perm)))
+const hasRole = (roles) => {
+    if (!roles || roles.length === 0) return true
+    return roles.some(role => {
+        if (role === 'propietario') return isPropietario.value
+        if (role === 'barbero') return isBarbero.value
+        if (role === 'cliente') return isCliente.value
+        return false
+    })
+}
+
+const visibleLinks = computed(() => links.value.filter(link => hasRole(link.roles)))
 
 </script>
 

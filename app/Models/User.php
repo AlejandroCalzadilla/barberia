@@ -18,7 +18,7 @@ class User extends Authenticatable
     use HasProfilePhoto;
     use Notifiable;
     use TwoFactorAuthenticatable;
-    use HasRoles;
+    // use HasRoles; // Comentado: Ya no usamos Spatie Permission
 
     /**
      * The attributes that are mass assignable.
@@ -37,6 +37,9 @@ class User extends Authenticatable
         'direccion',
         'tipo_usuario',
         'estado',
+        'is_propietario',
+        'is_barbero',
+        'is_cliente',
     ];
 
     /**
@@ -53,9 +56,12 @@ class User extends Authenticatable
 
     /**
      * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'is_propietario' => 'boolean',
+        'is_barbero' => 'boolean',
+        'is_cliente' => 'boolean',
+    ];/
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];

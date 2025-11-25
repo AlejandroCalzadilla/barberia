@@ -12,10 +12,10 @@ class ServicioController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:servicios.view')->only(['index']);
+      /*   $this->middleware('permission:servicios.view')->only(['index']);
         $this->middleware('permission:servicios.create')->only(['create','store']);
         $this->middleware('permission:servicios.update')->only(['edit','update']);
-        $this->middleware('permission:servicios.delete')->only(['destroy']);
+        $this->middleware('permission:servicios.delete')->only(['destroy']); */
     }
 
     public function index(Request $request)

@@ -1,7 +1,8 @@
 <script setup>
-import { router, Link, usePage } from '@inertiajs/vue3'
+import { router, Link } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { ref } from 'vue'
+import { useRoles } from '@/composables/useRoles.js'
 
 const props = defineProps({
   barberos: Object,
@@ -9,8 +10,7 @@ const props = defineProps({
 })
 
 const q = ref(props.filters?.q || '')
-const page = usePage()
-const can = (p) => (page.props?.auth?.permissions || []).includes(p)
+const { isPropietario } = useRoles()
 
 function search() {
   router.get(route('barberos.index'), { q: q.value }, { preserveState: true, replace: true })
@@ -28,7 +28,7 @@ function destroyItem(id) {
     <template #header>
       <div class="flex items-center justify-between">
         <h2 class="font-semibold text-xl leading-tight" style="color: var(--color-neutral);">Barberos</h2>
-        <Link v-if="can('barberos.create')" :href="route('barberos.create')" 
+        <Link v-if="isPropietario" :href="route('barberos.create')" 
               class="px-3 py-2 text-white rounded hover:opacity-90 transition" 
               style="background-color: var(--color-primary);">
           Nuevo
@@ -79,14 +79,14 @@ function destroyItem(id) {
                   </td>
                   <td class="p-2 flex gap-2">
                     <Link 
-                      v-if="can('barberos.update')" 
+                      v-if="isPropietario" 
                       :href="route('barberos.edit', b.id_barbero)" 
                       class="hover:opacity-70 transition"
                       style="color: var(--color-primary);">
                       Editar
                     </Link>
                     <button 
-                      v-if="can('barberos.delete')" 
+                      v-if="isPropietario" 
                       @click="destroyItem(b.id_barbero)" 
                       class="hover:opacity-70 transition"
                       style="color: var(--color-error);">

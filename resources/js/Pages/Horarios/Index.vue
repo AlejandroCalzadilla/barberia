@@ -1,8 +1,9 @@
 <script setup>
-import { router, Link, usePage } from '@inertiajs/vue3'
+import { router, Link } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import HorarioVisual from '@/Components/HorarioVisual.vue'
 import { ref, computed } from 'vue'
+import { useRoles } from '@/composables/useRoles.js'
 
 const props = defineProps({
   horarios: [Object, Array],
@@ -12,12 +13,11 @@ const props = defineProps({
 })
 
 const barbero = ref(props.filters?.barbero || '')
-const page = usePage()
-const can = (p) => (page.props?.auth?.permissions || []).includes(p)
+const { isPropietario, isBarbero: isUserBarbero, user } = useRoles()
 
 const barberoNombre = computed(() => {
   if (props.isBarbero) {
-    return page.props?.auth?.user?.name || 'Mi'
+    return user.value?.name || 'Mi'
   }
   return ''
 })
@@ -40,7 +40,7 @@ function destroyItem(id) {
         <h2 class="font-semibold text-xl leading-tight" style="color: var(--color-neutral);">
           {{ isBarbero ? 'Mi Horario' : 'Horarios' }}
         </h2>
-        <Link v-if="can('horarios.create') && !isBarbero" :href="route('horarios.create')" 
+        <Link v-if="isPropietario && !isBarbero" :href="route('horarios.create')" 
               class="px-3 py-2 text-white rounded hover:opacity-90 transition" 
               style="background-color: var(--color-primary);">
           Nuevo
@@ -102,14 +102,14 @@ function destroyItem(id) {
                   </td>
                   <td class="p-2 flex gap-2">
                     <Link 
-                      v-if="can('horarios.update')" 
+                      v-if="isPropietario" 
                       :href="route('horarios.edit', h.id_horario)" 
                       class="hover:opacity-70 transition"
                       style="color: var(--color-primary);">
                       Editar
                     </Link>
                     <button 
-                      v-if="can('horarios.delete')" 
+                      v-if="isPropietario" 
                       @click="destroyItem(h.id_horario)" 
                       class="hover:opacity-70 transition"
                       style="color: var(--color-error);">

@@ -15,10 +15,10 @@ class BarberoController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:barberos.view')->only(['index']);
+        /* $this->middleware('permission:barberos.view')->only(['index']);
         $this->middleware('permission:barberos.create')->only(['create','store']);
         $this->middleware('permission:barberos.update')->only(['edit','update']);
-        $this->middleware('permission:barberos.delete')->only(['destroy']);
+        $this->middleware('permission:barberos.delete')->only(['destroy']); */
     }
 
     public function index(Request $request)
