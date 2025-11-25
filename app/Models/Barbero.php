@@ -25,4 +25,14 @@ class Barbero extends Model
     {
         return $this->belongsTo(User::class, 'id_usuario');
     }
+
+    public function horarios()
+    {
+        return $this->hasMany(Horario::class, 'id_barbero', 'id_barbero');
+    }
+
+    public function reservas()
+    {
+        return $this->hasMany(Reserva::class, 'id_barbero', 'id_barbero');
+    }
 }

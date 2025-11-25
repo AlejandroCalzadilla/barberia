@@ -39,7 +39,13 @@ class ServicioController extends Controller
 
     public function create()
     {
-        return Inertia::render('Servicios/Create');
+        $productos = \App\Models\Producto::where('estado', 'activo')
+            ->orderBy('nombre')
+            ->get(['id_producto', 'nombre', 'stock_actual']);
+            
+        return Inertia::render('Servicios/Create', [
+            'productos' => $productos,
+        ]);
     }
 
     public function store(Request $request)
@@ -51,6 +57,9 @@ class ServicioController extends Controller
             'duracion_minutos' => 'required|integer|min:1',
             'estado' => 'required|in:activo,inactivo',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'productos' => 'nullable|array',
+            'productos.*.id_producto' => 'required|exists:producto,id_producto',
+            'productos.*.cantidad' => 'required|integer|min:1',
         ]);
 
         DB::beginTransaction();
@@ -64,7 +73,19 @@ class ServicioController extends Controller
                 $validated['imagen'] = '/storage/' . $ruta;
             }
 
-            Servicio::create($validated);
+            $productos = $validated['productos'] ?? [];
+            unset($validated['productos']);
+
+            $servicio = Servicio::create($validated);
+
+            // Sincronizar productos con cantidades
+            if (!empty($productos)) {
+                $syncData = [];
+                foreach ($productos as $prod) {
+                    $syncData[$prod['id_producto']] = ['cantidad' => $prod['cantidad']];
+                }
+                $servicio->productos()->sync($syncData);
+            }
 
             DB::commit();
 
@@ -80,8 +101,15 @@ class ServicioController extends Controller
 
     public function edit(Servicio $servicio)
     {
+        $productos = \App\Models\Producto::where('estado', 'activo')
+            ->orderBy('nombre')
+            ->get(['id_producto', 'nombre', 'stock_actual']);
+
+        $servicio->load('productos:id_producto,nombre,stock_actual');
+            
         return Inertia::render('Servicios/Edit', [
             'servicio' => $servicio,
+            'productos' => $productos,
         ]);
     }
 
@@ -94,12 +122,15 @@ class ServicioController extends Controller
             'duracion_minutos' => 'required|integer|min:1',
             'estado' => 'required|in:activo,inactivo',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'productos' => 'nullable|array',
+            'productos.*.id_producto' => 'required|exists:producto,id_producto',
+            'productos.*.cantidad' => 'required|integer|min:1',
         ]);
 
         DB::beginTransaction();
 
         try {
-            // Procesar imagen si existe
+            // Procesar imagen solo si se subió un archivo nuevo
             if ($request->hasFile('imagen')) {
                 // Eliminar imagen anterior si existe
                 if ($servicio->imagen) {
@@ -111,9 +142,28 @@ class ServicioController extends Controller
                 $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
                 $ruta = $imagen->storeAs('servicios', $nombreImagen, 'public');
                 $validated['imagen'] = '/storage/' . $ruta;
+            } else {
+                // Si no hay archivo nuevo, removemos 'imagen' de los datos validados
+                // para no sobrescribir la imagen existente
+                unset($validated['imagen']);
             }
 
+            $productos = $validated['productos'] ?? [];
+            unset($validated['productos']);
+
             $servicio->update($validated);
+
+            // Sincronizar productos con cantidades
+            if (!empty($productos)) {
+                $syncData = [];
+                foreach ($productos as $prod) {
+                    $syncData[$prod['id_producto']] = ['cantidad' => $prod['cantidad']];
+                }
+                $servicio->productos()->sync($syncData);
+            } else {
+                // Si no hay productos, desasociar todos
+                $servicio->productos()->sync([]);
+            }
 
             DB::commit();
 

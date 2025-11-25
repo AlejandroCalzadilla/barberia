@@ -96,14 +96,14 @@ function cerrarModal() {
 
           <!-- Precio y duración -->
           <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="p-3 rounded" style="background-color: var(--color-primary); opacity: 0.1;">
-              <p class="text-xs text-gray-600 dark:text-gray-400">Precio</p>
+            <div class="p-3 rounded" style="background-color: var(--color-primary); ">
+              <p class="text-xs " style="color: var(--color-neutral);">Precio</p>
               <p class="text-lg font-bold" style="color: var(--color-neutral);">
                 ${{ servicio.precio }}
               </p>
             </div>
-            <div class="p-3 rounded" style="background-color: var(--color-primary); opacity: 0.1;">
-              <p class="text-xs text-gray-600 dark:text-gray-400">Duración</p>
+            <div class="p-3 rounded" style="background-color: var(--color-primary); ">
+              <p class="text-xs ">Duración</p>
               <p class="text-lg font-bold" style="color: var(--color-neutral);">
                 {{ servicio.duracion_minutos }} min
               </p>

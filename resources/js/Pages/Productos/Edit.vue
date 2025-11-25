@@ -11,6 +11,7 @@ const props = defineProps({
 const previewImage = ref(null)
 
 const form = useForm({
+  _method: 'PUT',
   id_categoria: props.producto.id_categoria ?? '',
   codigo: props.producto.codigo ?? '',
   nombre: props.producto.nombre ?? '',
@@ -38,7 +39,7 @@ function handleImageChange(event) {
 
 function submit() {
   form.post(route('productos.update', props.producto.id_producto), {
-    method: 'PUT',
+    forceFormData: true,
   })
 }
 </script>

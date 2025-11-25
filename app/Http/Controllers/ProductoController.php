@@ -109,7 +109,7 @@ class ProductoController extends Controller
             'imagenurl' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ]);
 
-        // Procesar imagen si existe
+        // Procesar imagen solo si se subió un archivo nuevo
         if ($request->hasFile('imagenurl')) {
             // Eliminar imagen anterior si existe
             if ($producto->imagenurl) {
@@ -121,6 +121,10 @@ class ProductoController extends Controller
             $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
             $ruta = $imagen->storeAs('productos', $nombreImagen, 'public');
             $data['imagenurl'] = '/storage/' . $ruta;
+        } else {
+            // Si no hay archivo nuevo, removemos 'imagenurl' de los datos validados
+            // para no sobrescribir la imagen existente
+            unset($data['imagenurl']);
         }
 
         $producto->update($data);

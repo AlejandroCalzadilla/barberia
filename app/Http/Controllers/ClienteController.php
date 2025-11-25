@@ -41,7 +41,11 @@ class ClienteController extends Controller
 
     public function create()
     {
-        $usuarios = User::where('tipo_usuario', 'cliente')->orderBy('name')->get(['id','name','email']);
+        // Solo usuarios tipo cliente que NO tengan un registro en la tabla cliente
+        $usuarios = User::where('tipo_usuario', 'cliente')
+            ->whereDoesntHave('cliente')
+            ->orderBy('name')
+            ->get(['id','name','email']);
         return Inertia::render('Clientes/Create', [
             'usuarios' => $usuarios,
         ]);
@@ -61,7 +65,14 @@ class ClienteController extends Controller
 
     public function edit(Cliente $cliente)
     {
-        $usuarios = User::where('tipo_usuario', 'cliente')->orderBy('name')->get(['id','name','email']);
+        // Usuarios tipo cliente sin asociar O el usuario actual del cliente
+        $usuarios = User::where('tipo_usuario', 'cliente')
+            ->where(function($query) use ($cliente) {
+                $query->whereDoesntHave('cliente')
+                      ->orWhere('id', $cliente->id_usuario);
+            })
+            ->orderBy('name')
+            ->get(['id','name','email']);
         return Inertia::render('Clientes/Edit', [
             'cliente' => $cliente->load('user:id,name,email'),
             'usuarios' => $usuarios,

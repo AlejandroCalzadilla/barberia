@@ -2,122 +2,175 @@
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import { useTheme } from '@/composables/useTheme.js';
 
-const { theme, toggleTheme } = useTheme();
-console.log('Tema actual welcome:', theme);
+const { theme } = useTheme();
+
+const services = [
+    { 
+        icon: '✂️',
+        title: 'Cortes de Cabello',
+        description: 'Cortes clásicos y modernos adaptados a tu estilo. Nuestros barberos expertos te ayudarán a encontrar el look perfecto que se adapte a tu personalidad y estilo de vida.'
+    },
+    {
+        icon: '💈',
+        title: 'Afeitado Clásico',
+        description: 'Experiencia de afeitado tradicional con toallas calientes y productos premium. Disfruta de un momento de relajación mientras dejamos tu rostro impecable.'
+    },
+    {
+        icon: '🧔',
+        title: 'Arreglo de Barba',
+        description: 'Diseño y mantenimiento profesional de barba. Desde recortes precisos hasta moldeado completo, mantenemos tu barba con estilo y bien cuidada.'
+    },
+    {
+        icon: '👨',
+        title: 'Tratamientos Capilares',
+        description: 'Cuidado especializado para mantener tu cabello saludable. Ofrecemos tratamientos hidratantes, restauradores y productos de calidad premium.'
+    }
+]
+
+const features = [
+    {
+        icon: '📅',
+        title: 'Reservas Online',
+        description: 'Sistema de reservas 24/7 para tu comodidad. Agenda tu cita cuando quieras, desde donde estés.'
+    },
+    {
+        icon: '👥',
+        title: 'Barberos Profesionales',
+        description: 'Equipo capacitado con años de experiencia. Cada barbero es un artista dedicado a su oficio.'
+    },
+    {
+        icon: '💰',
+        title: 'Precios Accesibles',
+        description: 'Calidad premium a precios justos. Ofrecemos servicios de alta gama sin comprometer tu presupuesto.'
+    },
+    {
+        icon: '⭐',
+        title: 'Ambiente Premium',
+        description: 'Espacio moderno y acogedor diseñado para tu confort. Música, bebidas y un ambiente relajado.'
+    }
+]
 </script>
 
 <template>
-    <div  class="border-2 rounded-xl"  style="background-color: var(--color-base); border-color: var(--color-primary);">
-      
-      
-        <div class="p-6 lg:p-8  dark:from-gray-700/50 dark:via-transparent "
-           
-        >
-            <ApplicationLogo class="block h-12 w-auto" />
+    <div class="border-2 rounded-xl overflow-hidden" style="background-color: var(--color-base); border-color: var(--color-primary);">
+        <!-- Header Hero -->
+        <div class="relative p-8 lg:p-12" 
+             style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);">
+            <ApplicationLogo class="block h-16 w-auto mb-8" />
+            
+            <div class="max-w-3xl">
+                <h1 class="text-4xl lg:text-5xl font-bold text-white mb-4">
+                    Bienvenido a tu Barbería Premium
+                </h1>
+                <p class="text-xl text-white/90 leading-relaxed">
+                    Más que un corte de cabello, una experiencia. Descubre el arte de la barbería tradicional 
+                    combinado con las tendencias más modernas. Tu estilo, nuestra pasión.
+                </p>
+            </div>
 
-            <h1 class="mt-8 text-2xl font-medium text-gray-900 dark:text-white"
-             style="color: var(--color-primary);"
-             >
-                Welcome to your Jetstream application!
-            </h1>
-
-            <p class="mt-6 text-gray-500 dark:text-gray-400 leading-relaxed">
-                Laravel Jetstream provides a beautiful, robust starting point for your next Laravel application. Laravel is designed
-                to help you build your application using a development environment that is simple, powerful, and enjoyable. We believe
-                you should love expressing your creativity through programming, so we have spent time carefully crafting the Laravel
-                ecosystem to be a breath of fresh air. We hope you love it.
-            </p>
+            <!-- Decorative scissors icon -->
+            <div class="absolute top-8 right-8 text-white/10 text-9xl hidden lg:block">
+                ✂️
+            </div>
         </div>
 
-        <div class="bg-gray-200 dark:bg-gray-800 bg-opacity-25 grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 p-6 lg:p-8"
-            style="background-color: var(--color-base); border-color: var(--color-primary);"
-        >
-            <div>
-                <div class="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-6 h-6 stroke-gray-400">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                    </svg>
-                    <h2 class="ms-3 text-xl font-semibold text-gray-900 dark:text-white">
-                        <a href="https://laravel.com/docs"
-                         style="color: var(--color-accent);"
-                         >Documentation</a>
-                    </h2>
-                </div>
-
-                <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                    Laravel has wonderful documentation covering every aspect of the framework. Whether you're new to the framework or have previous experience, we recommend reading all of the documentation from beginning to end.
-                </p>
-
-                <p class="mt-4 text-sm">
-                    <a href="https://laravel.com/docs" class="inline-flex items-center font-semibold text-indigo-700 dark:text-indigo-300">
-                        Explore the documentation
-
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="ms-1 w-5 h-5 fill-indigo-500 dark:fill-indigo-200">
-                            <path fill-rule="evenodd" d="M5 10a.75.75 0 01.75-.75h6.638L10.23 7.29a.75.75 0 111.04-1.08l3.5 3.25a.75.75 0 010 1.08l-3.5 3.25a.75.75 0 11-1.04-1.08l2.158-1.96H5.75A.75.75 0 015 10z" clip-rule="evenodd" />
-                        </svg>
-                    </a>
+        <!-- Nuestros Servicios -->
+        <div class="p-8 lg:p-12" style="background-color: var(--color-base);">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold mb-3" style="color: var(--color-neutral);">
+                    💈 Nuestros Servicios
+                </h2>
+                <p class="text-lg" style="color: var(--color-neutral-light);">
+                    Servicios profesionales diseñados para el hombre moderno
                 </p>
             </div>
 
-            <div>
-                <div class="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-6 h-6 stroke-gray-400">
-                        <path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
-                    </svg>
-                    <h2 class="ms-3 text-xl font-semibold text-gray-900 dark:text-white">
-                        <a href="https://laracasts.com"
-                            style="color: var(--color-accent);"
-                         >Laracasts</a>
-                    </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                <div 
+                    v-for="(service, idx) in services" 
+                    :key="idx"
+                    class="p-6 rounded-xl border-2 transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                    :style="{
+                        backgroundColor: 'var(--color-base)',
+                        borderColor: 'var(--color-primary-light)'
+                    }"
+                >
+                    <div class="flex items-start space-x-4">
+                        <div class="text-5xl flex-shrink-0">{{ service.icon }}</div>
+                        <div>
+                            <h3 class="text-xl font-bold mb-2" style="color: var(--color-neutral);">
+                                {{ service.title }}
+                            </h3>
+                            <p class="leading-relaxed" style="color: var(--color-neutral-light);">
+                                {{ service.description }}
+                            </p>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                    Laracasts offers thousands of video tutorials on Laravel, PHP, and JavaScript development. Check them out, see for yourself, and massively level up your development skills in the process.
-                </p>
-
-                <p class="mt-4 text-sm">
-                    <a href="https://laracasts.com" class="inline-flex items-center font-semibold text-indigo-700 dark:text-indigo-300">
-                        Start watching Laracasts
-
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="ms-1 w-5 h-5 fill-indigo-500 dark:fill-indigo-200">
-                            <path fill-rule="evenodd" d="M5 10a.75.75 0 01.75-.75h6.638L10.23 7.29a.75.75 0 111.04-1.08l3.5 3.25a.75.75 0 010 1.08l-3.5 3.25a.75.75 0 11-1.04-1.08l2.158-1.96H5.75A.75.75 0 015 10z" clip-rule="evenodd" />
-                        </svg>
-                    </a>
+            <!-- Por Qué Elegirnos -->
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold mb-3" style="color: var(--color-neutral);">
+                    ⭐ ¿Por Qué Elegirnos?
+                </h2>
+                <p class="text-lg" style="color: var(--color-neutral-light);">
+                    La mejor experiencia en barbería a tu alcance
                 </p>
             </div>
 
-            <div>
-                <div class="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-6 h-6 stroke-gray-400">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                    </svg>
-                    <h2 class="ms-3 text-xl font-semibold text-gray-900 dark:text-white">
-                        <a href="https://tailwindcss.com/"
-                            style="color: var(--color-accent);"
-                        >Tailwind</a>
-                    </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div 
+                    v-for="(feature, idx) in features" 
+                    :key="idx"
+                    class="p-6 rounded-xl text-center transition-all duration-300 hover:shadow-lg"
+                    :style="{
+                        backgroundColor: 'var(--color-base)',
+                        border: '2px solid var(--color-primary-light)'
+                    }"
+                >
+                    <div class="text-5xl mb-4">{{ feature.icon }}</div>
+                    <h3 class="text-lg font-bold mb-2" style="color: var(--color-neutral);">
+                        {{ feature.title }}
+                    </h3>
+                    <p class="text-sm leading-relaxed" style="color: var(--color-neutral-light);">
+                        {{ feature.description }}
+                    </p>
                 </div>
-
-                <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                    Laravel Jetstream is built with Tailwind, an amazing utility first CSS framework that doesn't get in your way. You'll be amazed how easily you can build and maintain fresh, modern designs with this wonderful framework at your fingertips.
-                </p>
             </div>
+        </div>
 
-            <div>
-                <div class="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="w-6 h-6 stroke-gray-400">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                    </svg>
-                    <h2 class="ms-3 text-xl font-semibold text-gray-900 dark:text-white"
-                    style="color: var(--color-accent);"
-                    >
-                        Authentication
-                    </h2>
-                </div>
-
-                <p class="mt-4 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                    Authentication and registration views are included with Laravel Jetstream, as well as support for user email verification and resetting forgotten passwords. So, you're free to get started with what matters most: building your application.
-                </p>
+        <!-- Call to Action Footer -->
+        <div class="p-8 lg:p-12 text-center border-t-2" 
+             :style="{ 
+                 backgroundColor: 'var(--color-base)',
+                 borderColor: 'var(--color-primary-light)'
+             }">
+            <h3 class="text-2xl font-bold mb-4" style="color: var(--color-neutral);">
+                ¿Listo para tu nuevo look? 📅
+            </h3>
+            <p class="text-lg mb-6" style="color: var(--color-neutral-light);">
+                Agenda tu cita ahora y experimenta el mejor servicio de barbería
+            </p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <a 
+                    href="#" 
+                    class="px-8 py-3 rounded-lg font-bold text-white transition-all duration-300 hover:shadow-xl hover:scale-105"
+                    style="background-color: var(--color-primary);"
+                >
+                    📞 Reservar Ahora
+                </a>
+                <a 
+                    href="#" 
+                    class="px-8 py-3 rounded-lg font-bold transition-all duration-300 hover:shadow-xl hover:scale-105"
+                    :style="{
+                        backgroundColor: 'var(--color-base)',
+                        border: '2px solid var(--color-primary)',
+                        color: 'var(--color-primary)'
+                    }"
+                >
+                    Ver Servicios
+                </a>
             </div>
         </div>
     </div>

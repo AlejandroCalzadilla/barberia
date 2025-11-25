@@ -31,6 +31,12 @@ class User extends Authenticatable
         'password',
         'provider',
         'provider_id',
+        'nombre',
+        'apellido',
+        'telefono',
+        'direccion',
+        'tipo_usuario',
+        'estado',
     ];
 
     /**
@@ -52,6 +58,16 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+    ];
+
+    /**
+     * The attributes with default values.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'tipo_usuario' => 'cliente',
+        'estado' => 'activo',
     ];
 
     /**

@@ -55,8 +55,24 @@ class PagoController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        // Datos de la reserva desde el catálogo (query params)
+        $datosReserva = [
+            'id_servicio' => $request->integer('id_servicio'),
+            'id_barbero' => $request->integer('id_barbero'),
+            'fecha_reserva' => $request->input('fecha_reserva'),
+            'hora_inicio' => $request->input('hora_inicio'),
+        ];
+
+        // Si vienen datos de reserva desde el catálogo, cargar el servicio
+        $servicio = null;
+        $barbero = null;
+        if ($datosReserva['id_servicio']) {
+            $servicio = \App\Models\Servicio::find($datosReserva['id_servicio']);
+            $barbero = \App\Models\Barbero::with('user:id,name')->find($datosReserva['id_barbero']);
+        }
+
         $reservas = Reserva::with(['cliente.user:id,name', 'barbero.user:id,name'])
             ->orderByDesc('id_reserva')
             ->get(['id_reserva', 'id_cliente', 'id_barbero']);
@@ -65,29 +81,118 @@ class PagoController extends Controller
             'reservas' => $reservas,
             'metodosPago' => ['efectivo', 'tarjeta', 'transferencia', 'otro'],
             'hoy' => now()->format('Y-m-d'),
+            'datosReserva' => $datosReserva,
+            'servicio' => $servicio,
+            'barbero' => $barbero,
+        ]);
+    }
+
+    /**
+     * Mostrar vista de pago por QR para reserva desde catálogo
+     */
+    public function pagarReserva(Request $request)
+    {
+        $datosReserva = [
+            'id_servicio' => $request->integer('id_servicio'),
+            'id_barbero' => $request->integer('id_barbero'),
+            'fecha_reserva' => $request->input('fecha_reserva'),
+            'hora_inicio' => $request->input('hora_inicio'),
+        ];
+
+        // Validar que vengan todos los datos necesarios
+        if (!$datosReserva['id_servicio'] || !$datosReserva['id_barbero'] || 
+            !$datosReserva['fecha_reserva'] || !$datosReserva['hora_inicio']) {
+            return redirect()->route('servicios.catalogo')
+                ->with('error', 'Faltan datos para procesar el pago');
+        }
+
+        // Cargar información completa
+        $servicio = \App\Models\Servicio::findOrFail($datosReserva['id_servicio']);
+        $barbero = \App\Models\Barbero::with('user:id,name')->findOrFail($datosReserva['id_barbero']);
+
+        // Calcular hora de fin
+        $horaInicio = Carbon::parse($datosReserva['hora_inicio']);
+        $horaFin = $horaInicio->copy()->addMinutes($servicio->duracion_minutos);
+
+        return Inertia::render('Pagos/PagarReserva', [
+            'servicio' => $servicio,
+            'barbero' => $barbero,
+            'fecha_reserva' => $datosReserva['fecha_reserva'],
+            'hora_inicio' => $datosReserva['hora_inicio'],
+            'hora_fin' => $horaFin->format('H:i'),
+            'monto_total' => $servicio->precio,
+            'datosReserva' => $datosReserva,
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'id_reserva' => 'required|exists:reserva,id_reserva',
+            'id_reserva' => 'nullable|exists:reserva,id_reserva',
             'monto_total' => 'required|numeric|min:0.01',
             'fecha_pago' => 'required|date',
             'metodo_pago' => 'required|in:efectivo,tarjeta,transferencia,otro',
             'tipo_pago' => 'required|in:anticipo,pago_parcial,pago_completo',
             'estado' => 'required|in:pendiente,pagado,cancelado,reembolsado',
             'notas' => 'nullable|string',
+            // Datos para crear la reserva si no existe
+            'id_servicio' => 'nullable|exists:servicio,id_servicio',
+            'id_barbero' => 'nullable|exists:barbero,id_barbero',
+            'fecha_reserva' => 'nullable|date',
+            'hora_inicio' => 'nullable|date_format:H:i',
         ]);
 
+        DB::beginTransaction();
+
         try {
-            $pago = Pago::create($validated);
+            $idReserva = $validated['id_reserva'];
+
+            // Si no hay id_reserva, crear la reserva primero
+            if (!$idReserva && $validated['id_servicio']) {
+                $user = auth()->user();
+                $cliente = $user->cliente;
+
+                if (!$cliente) {
+                    return back()->with('error', 'No tienes un perfil de cliente asociado');
+                }
+
+                $servicio = \App\Models\Servicio::findOrFail($validated['id_servicio']);
+                $horaInicio = Carbon::parse($validated['hora_inicio']);
+                $horaFin = $horaInicio->copy()->addMinutes($servicio->duracion_minutos);
+
+                $reserva = Reserva::create([
+                    'id_cliente' => $cliente->id_cliente,
+                    'id_barbero' => $validated['id_barbero'],
+                    'id_servicio' => $validated['id_servicio'],
+                    'fecha_reserva' => $validated['fecha_reserva'],
+                    'hora_inicio' => $validated['hora_inicio'],
+                    'hora_fin' => $horaFin->format('H:i'),
+                    'precio_servicio' => $servicio->precio,
+                    'total' => $servicio->precio,
+                    'estado' => $validated['estado'] === 'pagado' ? 'confirmada' : 'pendiente_pago',
+                ]);
+
+                $idReserva = $reserva->id_reserva;
+            }
+
+            $pago = Pago::create([
+                'id_reserva' => $idReserva,
+                'monto_total' => $validated['monto_total'],
+                'fecha_pago' => $validated['fecha_pago'],
+                'metodo_pago' => $validated['metodo_pago'],
+                'tipo_pago' => $validated['tipo_pago'],
+                'estado' => $validated['estado'],
+                'notas' => $validated['notas'] ?? null,
+            ]);
+
+            DB::commit();
 
             return redirect()
-                ->route('pagos.index')
-                ->with('success', 'Pago registrado correctamente');
+                ->route('servicios.catalogo')
+                ->with('success', 'Reserva y pago registrados correctamente');
 
         } catch (\Exception $e) {
+            DB::rollBack();
             return back()->with('error', 'Error al registrar el pago: ' . $e->getMessage());
         }
     }
@@ -149,6 +254,32 @@ class PagoController extends Controller
                 
         } catch (\Exception $e) {
             return back()->with('error', 'Error al eliminar el pago: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Obtener el estado actual de un pago
+     */
+    public function obtenerEstado($id)
+    {
+        try {
+            $pago = Pago::with(['reserva:id_reserva,estado'])->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'pago' => [
+                    'id_pago' => $pago->id_pago,
+                    'estado' => $pago->estado,
+                    'fecha_pago' => $pago->fecha_pago,
+                    'monto_total' => $pago->monto_total,
+                    'reserva_estado' => $pago->reserva->estado ?? null,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener estado del pago: ' . $e->getMessage()
+            ], 500);
         }
     }
      

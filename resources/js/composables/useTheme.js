@@ -16,6 +16,7 @@ const availableThemes = [
             success: '#22c55e',     // green-500
             warning: '#f59e0b',     // amber-500
             error: '#ef4444',       // red-500
+            sidebarBg: '#ecf1f5ff',   // custom for sidebar background
         }
     },
     { 
@@ -32,6 +33,7 @@ const availableThemes = [
             success: '#4ade80',     // green-400
             warning: '#fbbf24',     // amber-400
             error: '#f87171',       // red-400
+            sidebarBg: '#1f2945',   // custom for sidebar background
         }
     },
     { 
@@ -48,6 +50,7 @@ const availableThemes = [
             success: '#22c55e',     // green-500
             warning: '#f59e0b',     // amber-500
             error: '#ef4444',       // red-500
+            sidebarBg: '#fff1f5',   // custom for sidebar background
         }
     },
     { 
@@ -64,6 +67,7 @@ const availableThemes = [
             success: '#22c55e',     // green-500
             warning: '#f59e0b',     // amber-500
             error: '#ef4444',       // red-500
+            sidebarBg : '#059669'
         }
     },
     { 
@@ -80,7 +84,28 @@ const availableThemes = [
             success: '#22c55e',     // green-500
             warning: '#f59e0b',     // amber-500
             error: '#ef4444',       // red-500
+            sidebarBg: '#a855f7', 
         }
+    },
+    { 
+        value: 'kids', 
+        name: '🚀 Niños', 
+        icon: '🚀',
+        colors: {
+            primary: '#ff6b6b',     // rojo brillante
+            secondary: '#4ecdc4',   // turquesa
+            accent: '#46bacfff',      // amarillo alegre
+            neutral: '#2d3436',     // gris oscuro
+            base: '#fff9e6',        // amarillo muy claro
+            info: '#74b9ff',        // azul claro
+            success: '#0c4d3aff',     // verde menta
+            warning: '#168593ff',     // amarillo pastel
+            error: '#ff7675',       // rojo suave
+            sidebarBg: '#fffbeb',   // turquesa
+        },
+        hasVideoBackground: true,
+        videoUrl: '/ninos-bg.mov',
+        hasCustomPatterns: true
     },
 ]
 
@@ -129,8 +154,40 @@ const applyTheme = (newTheme) => {
             // Aplicar clase del tema
             root.setAttribute('data-theme', newTheme)
             
-            // Cambiar el color de fondo del body
-            document.body.style.backgroundColor = themeConfig.colors.base
+            // Manejar video de fondo para tema de niños
+            let videoElement = document.getElementById('theme-video-background')
+            
+            if (themeConfig.hasVideoBackground && themeConfig.videoUrl) {
+                // Crear o actualizar el video de fondo
+                if (!videoElement) {
+                    videoElement = document.createElement('video')
+                    videoElement.id = 'theme-video-background'
+                    videoElement.autoplay = true
+                    videoElement.loop = true
+                    videoElement.muted = true
+                    videoElement.playsInline = true
+                    videoElement.style.cssText = `
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100vw;
+                        height: 100vh;
+                        object-fit: cover;
+                        z-index: -1;
+                        pointer-events: none;
+                    `
+                    document.body.insertBefore(videoElement, document.body.firstChild)
+                }
+                videoElement.src = themeConfig.videoUrl
+                videoElement.style.display = 'block'
+                document.body.style.backgroundColor = 'transparent'
+            } else {
+                // Remover video si existe
+                if (videoElement) {
+                    videoElement.style.display = 'none'
+                }
+                document.body.style.backgroundColor = themeConfig.colors.base
+            }
             
             // Guardar en localStorage
             localStorage.setItem('theme', newTheme)

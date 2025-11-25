@@ -41,7 +41,7 @@ class Producto extends Model
      */
     public function servicios()
     {
-        return $this->belongsToMany(Servicio::class, 'service_product', 'id_producto', 'id_servicio')
+        return $this->belongsToMany(Servicio::class, 'servicio_producto', 'id_producto', 'id_servicio')
             ->withPivot('cantidad')
             ->withTimestamps();
     }

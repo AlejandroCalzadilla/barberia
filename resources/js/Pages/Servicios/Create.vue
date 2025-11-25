@@ -5,9 +5,11 @@ import { ref } from 'vue'
 
 const props = defineProps({
   categorias: Array,
+  productos: Array,
 })
 
 const previewImage = ref(null)
+const productosSeleccionados = ref([])
 
 const form = useForm({
   nombre: '',
@@ -16,7 +18,19 @@ const form = useForm({
   precio: 0,
   estado: 'activo',
   imagen: null,
+  productos: [],
 })
+
+function agregarProducto() {
+  productosSeleccionados.value.push({
+    id_producto: '',
+    cantidad: 1
+  })
+}
+
+function eliminarProducto(index) {
+  productosSeleccionados.value.splice(index, 1)
+}
 
 function handleImageChange(event) {
   const file = event.target.files[0]
@@ -32,6 +46,7 @@ function handleImageChange(event) {
 }
 
 function submit() {
+  form.productos = productosSeleccionados.value.filter(p => p.id_producto)
   form.post(route('servicios.store'))
 }
 </script>
@@ -131,6 +146,59 @@ function submit() {
             <div v-if="form.errors.imagen" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.imagen }}</div>
             <div v-if="previewImage" class="mt-3">
               <img :src="previewImage" alt="Preview" class="w-full h-auto rounded max-w-xs" />
+            </div>
+          </div>
+
+          <div class="md:col-span-2 border-t pt-4" style="border-color: var(--color-neutral); opacity: 0.3;">
+            <div class="flex items-center justify-between mb-3">
+              <label class="block text-sm font-medium" style="color: var(--color-neutral);">Productos asociados</label>
+              <button 
+                type="button"
+                @click="agregarProducto"
+                class="px-3 py-1 text-sm rounded hover:opacity-90 transition"
+                style="background-color: var(--color-accent); color: white;">
+                + Agregar producto
+              </button>
+            </div>
+
+            <div v-for="(prod, index) in productosSeleccionados" :key="index" class="grid md:grid-cols-3 gap-3 mb-3 p-3 rounded" style="background-color: var(--color-base); border: 1px solid var(--color-neutral); opacity: 0.8;">
+              <div class="md:col-span-2">
+                <label class="block text-xs mb-1" style="color: var(--color-neutral);">Producto</label>
+                <select 
+                  v-model="prod.id_producto"
+                  class="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 transition"
+                  style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral);"
+                  :style="{'--tw-ring-color': 'var(--color-primary)'}">
+                  <option value="">Seleccionar producto</option>
+                  <option v-for="p in productos" :key="p.id_producto" :value="p.id_producto">
+                    {{ p.nombre }} (Stock: {{ p.stock_actual }})
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs mb-1" style="color: var(--color-neutral);">Cantidad</label>
+                <div class="flex gap-2">
+                  <input 
+                    v-model.number="prod.cantidad"
+                    type="number"
+                    min="1"
+                    class="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 transition"
+                    style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral);"
+                    :style="{'--tw-ring-color': 'var(--color-primary)'}"
+                  />
+                  <button 
+                    type="button"
+                    @click="eliminarProducto(index)"
+                    class="px-2 py-1 rounded text-sm hover:opacity-80 transition"
+                    style="background-color: var(--color-error); color: white;">
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="productosSeleccionados.length === 0" class="text-sm text-center py-4" style="color: var(--color-neutral); opacity: 0.5;">
+              No hay productos asociados. Click en "Agregar producto" para añadir.
             </div>
           </div>
 

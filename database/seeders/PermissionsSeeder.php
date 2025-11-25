@@ -23,6 +23,7 @@ class PermissionsSeeder extends Seeder
             'horarios',
             'reservas',
             'pagos',
+            'usuarios',
         ];
 
         $actions = ['view', 'create', 'update', 'delete'];

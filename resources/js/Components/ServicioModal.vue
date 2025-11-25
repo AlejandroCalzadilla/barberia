@@ -51,6 +51,7 @@ async function cargarHorarios() {
       `/api/horarios-disponibles?barbero_id=${formData.value.id_barbero}&fecha=${formData.value.fecha_reserva}`
     )
     horarios.value = await response.json()
+    console.log('Horarios disponibles:', horarios.value)
   } catch (error) {
     console.error('Error al cargar horarios:', error)
   } finally {
@@ -82,19 +83,15 @@ async function reservar() {
     return
   }
 
-  try {
-    router.post(route('reservas.store'), {
-      id_cliente: page.props?.auth?.user?.cliente?.id_cliente,
-      id_barbero: formData.value.id_barbero,
-      id_servicio: props.servicio.id_servicio,
-      fecha_reserva: formData.value.fecha_reserva,
-      hora_inicio: formData.value.hora_inicio,
-      estado: 'pendiente_pago',
-      monto_anticipo: 0,
-    })
-  } catch (error) {
-    console.error('Error al reservar:', error)
-  }
+  // Redirigir directamente a la página de pago con los datos de la reserva
+  router.get(route('pagos.pagar-reserva'), {
+    id_servicio: props.servicio.id_servicio,
+    id_barbero: formData.value.id_barbero,
+    fecha_reserva: formData.value.fecha_reserva,
+    hora_inicio: formData.value.hora_inicio,
+  })
+  
+  emit('close')
 }
 
 const fechaMinima = computed(() => {
@@ -112,8 +109,8 @@ const fechaMinima = computed(() => {
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
       <!-- Encabezado -->
-      <div class="sticky top-0 border-b border-gray-200 dark:border-gray-700 p-6 flex justify-between items-start">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ servicio.nombre }}</h2>
+      <div class="sticky top-0 border-b border-gray-200  p-6 flex justify-between items-start">
+        <h2 class="text-2xl font-bold " style="color: var(--color-neutral);">{{ servicio.nombre }}</h2>
         <button 
           @click="emit('close')"
           class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl"
@@ -142,24 +139,24 @@ const fechaMinima = computed(() => {
 
         <!-- Información del servicio -->
         <div class="grid grid-cols-3 gap-4">
-          <div class="p-4 rounded" :style="{ backgroundColor: 'var(--color-primary)', opacity: 0.1 }">
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Precio</p>
-            <p class="text-xl font-bold" :style="{ color: 'var(--color-primary)' }">
+          <div class="p-4 rounded" :style="{ backgroundColor: 'var(--color-primary)' }">
+            <p class="text-sm " style="color: var(--color-neutral); margin-bottom: 0.25rem;">Precio</p>
+            <p class="text-xl font-bold" :style="{ color: 'var(--color-neutral)' }">
               {{ formatoPrecio(servicio.precio) }}
             </p>
           </div>
-          <div class="p-4 rounded" :style="{ backgroundColor: 'var(--color-secondary)', opacity: 0.1 }">
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Duración</p>
-            <p class="text-xl font-bold" :style="{ color: 'var(--color-secondary)' }">
+          <div class="p-4 rounded" :style="{ backgroundColor: 'var(--color-primary)' }">
+            <p class="text-sm  mb-1" style="color: var(--color-neutral);">Duración</p>
+            <p class="text-xl font-bold" :style="{ color: 'var(--color-neutral)' }">
               {{ servicio.duracion_minutos }} min
             </p>
           </div>
-          <div class="p-4 rounded" :style="{ backgroundColor: 'var(--color-accent)', opacity: 0.1 }">
+          <!-- <div class="p-4 rounded" :style="{ backgroundColor: 'var(--color-accent)', opacity: 0.1 }">
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Disponibilidad</p>
             <p class="text-xl font-bold" :style="{ color: 'var(--color-accent)' }">
               Inmediata
             </p>
-          </div>
+          </div> -->
         </div>
 
         <!-- Formulario de reserva -->

@@ -5,18 +5,39 @@ import { ref } from 'vue'
 
 const props = defineProps({
   servicio: Object,
+  productos: Array,
 })
 
 const previewImage = ref(props.servicio.imagen || null)
 
+const productosSeleccionados = ref(
+  (props.servicio.productos || []).map(p => ({
+    id_producto: p.id_producto,
+    cantidad: p.pivot.cantidad
+  }))
+)
+
 const form = useForm({
+  _method: 'PUT',
   nombre: props.servicio.nombre ?? '',
   descripcion: props.servicio.descripcion ?? '',
   duracion_minutos: props.servicio.duracion_minutos ?? 30,
   precio: props.servicio.precio ?? 0,
   estado: props.servicio.estado ?? 'activo',
   imagen: null,
+  productos: [],
 })
+
+function agregarProducto() {
+  productosSeleccionados.value.push({
+    id_producto: '',
+    cantidad: 1
+  })
+}
+
+function eliminarProducto(index) {
+  productosSeleccionados.value.splice(index, 1)
+}
 
 function handleImageChange(event) {
   const file = event.target.files[0]
@@ -32,8 +53,9 @@ function handleImageChange(event) {
 }
 
 function submit() {
+  form.productos = productosSeleccionados.value.filter(p => p.id_producto)
   form.post(route('servicios.update', props.servicio.id_servicio), {
-    method: 'put',
+    forceFormData: true,
   })
 }
 </script>
@@ -62,7 +84,7 @@ function submit() {
               v-model="form.nombre" 
               type="text" 
               class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); "
               :style="{'--tw-ring-color': 'var(--color-primary)'}"
             />
             <div v-if="form.errors.nombre" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.nombre }}</div>
@@ -73,20 +95,20 @@ function submit() {
             <textarea 
               v-model="form.descripcion" 
               class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); "
               :style="{'--tw-ring-color': 'var(--color-primary)'}"
             ></textarea>
             <div v-if="form.errors.descripcion" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.descripcion }}</div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Duración (min)</label>
+            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Duración (min) Aproximados</label>
             <input 
               v-model.number="form.duracion_minutos" 
               type="number" 
               min="1" 
               class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); "
               :style="{'--tw-ring-color': 'var(--color-primary)'}"
             />
             <div v-if="form.errors.duracion_minutos" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.duracion_minutos }}</div>
@@ -100,7 +122,7 @@ function submit() {
               step="0.01" 
               min="0" 
               class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral);"
               :style="{'--tw-ring-color': 'var(--color-primary)'}"
             />
             <div v-if="form.errors.precio" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.precio }}</div>
@@ -111,7 +133,7 @@ function submit() {
             <select 
               v-model="form.estado" 
               class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); "
               :style="{'--tw-ring-color': 'var(--color-primary)'}"
             >
               <option value="activo">Activo</option>
@@ -133,6 +155,59 @@ function submit() {
             <div v-if="form.errors.imagen" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.imagen }}</div>
             <div v-if="previewImage" class="mt-3">
               <img :src="previewImage" alt="Preview" class="w-full h-auto rounded max-w-xs" />
+            </div>
+          </div>
+
+          <div class="md:col-span-2 border-t pt-4" style="border-color: var(--color-neutral); " >
+            <div class="flex items-center justify-between mb-3">
+              <label class="block text-sm font-medium" style="color: var(--color-neutral);">Productos asociados</label>
+              <button 
+                type="button"
+                @click="agregarProducto"
+                class="px-3 py-1 text-sm rounded hover:opacity-90 transition"
+                style="background-color: var(--color-accent); color: white;">
+                + Agregar producto
+              </button>
+            </div>
+
+            <div v-for="(prod, index) in productosSeleccionados" :key="index" class="grid md:grid-cols-3 gap-3 mb-3 p-3 rounded" style="background-color: var(--color-base); border: 1px solid var(--color-neutral); ">
+              <div class="md:col-span-2">
+                <label class="block text-xs mb-1" style="color: var(--color-neutral);">Producto</label>
+                <select 
+                  v-model="prod.id_producto"
+                  class="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 transition"
+                  style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral);"
+                  :style="{'--tw-ring-color': 'var(--color-primary)'}">
+                  <option value="">Seleccionar producto</option>
+                  <option v-for="p in productos" :key="p.id_producto" :value="p.id_producto">
+                    {{ p.nombre }} (Stock: {{ p.stock_actual }})
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs mb-1" style="color: var(--color-neutral);">Cantidad</label>
+                <div class="flex gap-2">
+                  <input 
+                    v-model.number="prod.cantidad"
+                    type="number"
+                    min="1"
+                    class="w-full border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 transition"
+                    style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral);"
+                    :style="{'--tw-ring-color': 'var(--color-primary)'}"
+                  />
+                  <button 
+                    type="button"
+                    @click="eliminarProducto(index)"
+                    class="px-2 py-1 rounded text-sm hover:opacity-80 transition"
+                    style="background-color: var(--color-error); color: white;">
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="productosSeleccionados.length === 0" class="text-sm text-center py-4" style="color: var(--color-neutral); ">
+              No hay productos asociados. Click en "Agregar producto" para añadir.
             </div>
           </div>
 

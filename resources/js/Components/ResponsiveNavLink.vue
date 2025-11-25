@@ -15,8 +15,8 @@ const classes = computed(() => {
 });
 </script>
 
-<template>
-    <div>
+<template >
+    <div >
         <button v-if="as == 'button'" :class="classes" class="w-full text-start">
             <slot />
         </button>

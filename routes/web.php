@@ -11,12 +11,12 @@ use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\HorarioController;
 use App\Http\Controllers\ReservaController;
 use App\Http\Controllers\PagoController;
+use App\Http\Controllers\PagoFacilController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\SocialAuthController;
+use App\Http\Controllers\UsuarioController;
 use App\Models\Servicio;
-use App\Models\Barbero;
-use App\Models\Horario;
-use App\Models\Reserva;
+
 use Carbon\Carbon;
 
 /*
@@ -44,7 +44,6 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
-
 // Rutas públicas para el catálogo de servicios - API JSON
 Route::get('/api/servicios-catalogo', function () {
     return response()->json(
@@ -52,60 +51,16 @@ Route::get('/api/servicios-catalogo', function () {
     );
 })->name('servicios.catalogo.api');
 
-Route::get('/api/barberos-disponibles', function () {
-    return response()->json(
-        Barbero::with('user:id,name', 'horarios')
-            ->where('estado', 'disponible')
-            ->get()
-    );
-})->name('barberos.disponibles.api');
+Route::get('/api/barberos-disponibles', [BarberoController::class, 'disponibles'])
+    ->name('barberos.disponibles.api');
 
-Route::get('/api/horarios-disponibles', function () {
-    $barberoId = request()->integer('barbero_id');
-    $fecha = request()->input('fecha');
+Route::get('/api/horarios-disponibles', [BarberoController::class, 'horariosDisponibles'])
+    ->name('horarios.disponibles.api');
 
-    if (!$barberoId || !$fecha) {
-        return response()->json([]);
-    }
-
-    // Obtener horarios del barbero para ese día
-    $diaSemana = strtolower(Carbon::parse($fecha)->locale('es')->dayName);
-
-    $horariosDelDia = Horario::where('id_barbero', $barberoId)
-        ->where('dia_semana', $diaSemana)
-        ->where('estado', 'activo')
-        ->get();
-
-    if ($horariosDelDia->isEmpty()) {
-        return response()->json([]);
-    }
-
-    // Generar horarios disponibles cada 30 minutos
-    $horariosDisponibles = [];
-
-    foreach ($horariosDelDia as $horario) {
-        $inicio = Carbon::parse($horario->hora_inicio);
-        $fin = Carbon::parse($horario->hora_fin);
-        $duracionServicio = 30; // minutos por defecto
-
-        while ($inicio->copy()->addMinutes($duracionServicio) <= $fin) {
-            // Verificar si hay reserva en ese horario
-            $tieneReserva = Reserva::where('id_barbero', $barberoId)
-                ->where('fecha_reserva', $fecha)
-                ->where('hora_inicio', $inicio->format('H:i'))
-                ->whereNotIn('estado', ['cancelada', 'no_asistio'])
-                ->exists();
-
-            if (!$tieneReserva) {
-                $horariosDisponibles[] = $inicio->format('H:i');
-            }
-
-            $inicio->addMinutes(30);
-        }
-    }
-
-    return response()->json(array_values(array_unique($horariosDisponibles)));
-})->name('horarios.disponibles.api');
+// Callback de PagoFácil (debe estar FUERA del middleware de auth porque lo llama PagoFácil)
+Route::post('/api/pago-facil/callback', [PagoFacilController::class, 'callback'])
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
+    ->name('pagofacil.callback');
 
 Route::middleware([
     'auth:sanctum',
@@ -129,5 +84,13 @@ Route::middleware([
     Route::resource('horarios', HorarioController::class);
     Route::resource('reservas', ReservaController::class);
     Route::resource('pagos', PagoController::class);
+    Route::get('/pagar-reserva', [PagoController::class, 'pagarReserva'])->name('pagos.pagar-reserva');
+    
+    // Rutas para PagoFácil (requieren autenticación)
+    Route::post('/api/pago-facil/generar-qr', [PagoFacilController::class, 'generarQR'])->name('pagofacil.generar-qr');
+    Route::post('/api/pago-facil/consultar-estado', [PagoFacilController::class, 'consultarEstado'])->name('pagofacil.consultar-estado');
+    Route::get('/api/pagos/{id}/estado', [PagoController::class, 'obtenerEstado'])->name('pagos.estado');
+    
+    Route::resource('usuarios', UsuarioController::class);
     Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
 });
