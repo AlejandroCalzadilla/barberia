@@ -53,7 +53,7 @@ const isCliente = computed(() => user.value?.is_cliente || false)
 const sidebarOpen = ref(true)
 
 const links = computed(() => [
-    { key: 'dashboard', label: 'Dashboard', route: 'dashboard', roles: ['propietario', 'barbero'], icon: '🏠' },
+    //{ key: 'dashboard', label: 'Dashboard', route: 'dashboard', roles: ['propietario', 'barbero'], icon: '🏠' },
     { key: 'reportes', label: 'Reportes', route: 'reportes.index', roles: ['propietario'], icon: '📊' },
     { key: 'estadisticas-visitas', label: 'Estadísticas de Visitas', route: 'estadisticas.visitas', roles: ['propietario'], icon: '👁️' },
     { key: 'categorias', label: 'Categorías', route: 'categorias.index', roles: ['propietario'], icon: '📁' },

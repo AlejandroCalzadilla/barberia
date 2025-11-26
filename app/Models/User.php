@@ -116,11 +116,11 @@ class User extends Authenticatable
         
         // Si es barbero → dashboard
         if ($this->barbero) {
-            return route('dashboard');
+            return route('reservas.index');
         }
         
         // Si es admin → dashboard
-        return route('dashboard');
+        return route('reportes.index');
     }
 }
 

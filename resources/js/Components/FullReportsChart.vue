@@ -280,7 +280,7 @@ const pieOptions = {
         <h3 class="text-lg font-semibold mb-4" :style="{ color: 'var(--color-neutral)' }">
           Distribución de Reservas
         </h3>
-        <div class="h-80">
+        <div class="h-80" >
           <Bar :data="reservasChartData" :options="chartOptions" />
         </div>
       </div>
