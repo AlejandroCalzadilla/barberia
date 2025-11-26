@@ -23,24 +23,70 @@ class PagoController extends Controller
 
     public function index(Request $request)
     {
+        $user = auth()->user();
+        $isPropietario = $user->is_propietario;
+        $isBarbero = $user->is_barbero;
+        $isCliente = $user->is_cliente;
+
         $reservaId = $request->integer('reserva');
         $estado = $request->input('estado');
         $fecha = $request->input('fecha');
 
-        $pagos = Pago::query()
-            ->with(['reserva.cliente.user:id,name', 'reserva.barbero.user:id,name', 'reserva.servicio:id_servicio,nombre'])
-            ->when($reservaId, fn($q) => $q->where('id_reserva', $reservaId))
+        $query = Pago::query()
+            ->with(['reserva.cliente.user:id,name', 'reserva.barbero.user:id,name', 'reserva.servicio:id_servicio,nombre']);
+
+        // CLIENTE: Solo ve sus propios pagos
+        if ($isCliente && !$isPropietario && !$isBarbero) {
+            $cliente = $user->cliente;
+            if ($cliente) {
+                $query->whereHas('reserva', function($q) use ($cliente) {
+                    $q->where('id_cliente', $cliente->id_cliente);
+                });
+            } else {
+                // Si no tiene perfil de cliente, no ve nada
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        // BARBERO: Solo ve pagos de sus reservas
+        if ($isBarbero && !$isPropietario) {
+            $barbero = $user->barbero;
+            if ($barbero) {
+                $query->whereHas('reserva', function($q) use ($barbero) {
+                    $q->where('id_barbero', $barbero->id_barbero);
+                });
+            } else {
+                // Si no tiene perfil de barbero, no ve nada
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        // Aplicar filtros adicionales
+        $query->when($reservaId, fn($q) => $q->where('id_reserva', $reservaId))
             ->when(is_string($estado) && $estado !== '', fn($q) => $q->where('estado', $estado))
             ->when(is_string($fecha) && $fecha !== '', fn($q) => $q->whereDate('fecha_pago', $fecha))
-            ->orderByDesc('id_pago')
-            ->paginate(10)
-            ->withQueryString();
+            ->orderByDesc('id_pago');
 
-        $reservas = Reserva::with(['cliente.user:id,name','barbero.user:id,name'])
-            ->orderByDesc('id_reserva')
+        $pagos = $query->paginate(10)->withQueryString();
+
+        // Reservas según el rol
+        $reservasQuery = Reserva::with(['cliente.user:id,name','barbero.user:id,name']);
+        
+        if ($isCliente && !$isPropietario && !$isBarbero) {
+            $cliente = $user->cliente;
+            if ($cliente) {
+                $reservasQuery->where('id_cliente', $cliente->id_cliente);
+            }
+        } elseif ($isBarbero && !$isPropietario) {
+            $barbero = $user->barbero;
+            if ($barbero) {
+                $reservasQuery->where('id_barbero', $barbero->id_barbero);
+            }
+        }
+
+        $reservas = $reservasQuery->orderByDesc('id_reserva')
             ->get(['id_reserva','id_cliente','id_barbero']);
 
-        //dd($pagos);     
         return Inertia::render('Pagos/Index', [
             'pagos' => $pagos,
             'reservas' => $reservas,
@@ -49,7 +95,11 @@ class PagoController extends Controller
                 'estado' => $estado,
                 'fecha' => $fecha,
             ],
-
+            'userRole' => [
+                'isPropietario' => $isPropietario,
+                'isBarbero' => $isBarbero,
+                'isCliente' => $isCliente,
+            ],
             'metodosPago' => ['efectivo', 'tarjeta', 'transferencia', 'otro'],
             'estadosPago' => ['pendiente', 'pagado', 'cancelado', 'reembolsado'],
         ]);
@@ -88,10 +138,53 @@ class PagoController extends Controller
     }
 
     /**
-     * Mostrar vista de pago por QR para reserva desde catálogo
+     * Mostrar vista de pago por QR para pago final pendiente
      */
     public function pagarReserva(Request $request)
     {
+        $idPago = $request->integer('id_pago');
+        $idReserva = $request->integer('id_reserva');
+
+        // Si viene id_pago, es un pago final pendiente
+        if ($idPago) {
+            $pago = Pago::with(['reserva.servicio', 'reserva.barbero.user', 'reserva.cliente.user'])
+                ->findOrFail($idPago);
+
+            // Verificar que el pago sea del cliente autenticado
+            $user = auth()->user();
+            if ($pago->reserva->cliente->id_usuario !== $user->id) {
+                return redirect()->route('pagos.index')
+                    ->with('error', 'No tienes permiso para pagar esta reserva');
+            }
+
+            // Verificar que sea un pago pendiente de tipo pago_final
+            if ($pago->estado !== 'pendiente' || $pago->tipo_pago !== 'pago_final') {
+                return redirect()->route('pagos.index')
+                    ->with('error', 'Este pago no está disponible para completar');
+            }
+
+            $reserva = $pago->reserva;
+            $servicio = $reserva->servicio;
+            $barbero = $reserva->barbero;
+
+            // Calcular hora de fin
+            $horaInicio = Carbon::parse($reserva->hora_inicio);
+            $horaFin = $horaInicio->copy()->addMinutes($servicio->duracion_minutos);
+
+            return Inertia::render('Pagos/PagarPagoFinal', [
+                'pago' => $pago,
+                'servicio' => $servicio,
+                'barbero' => $barbero,
+                'fecha_reserva' => $reserva->fecha_reserva,
+                'hora_inicio' => $reserva->hora_inicio,
+                'hora_fin' => $horaFin->format('H:i'),
+                'monto_total' => $pago->monto_total,
+                'id_pago' => $pago->id_pago,
+                'id_reserva' => $reserva->id_reserva,
+            ]);
+        }
+
+        // Si viene desde el catálogo (flujo original)
         $datosReserva = [
             'id_servicio' => $request->integer('id_servicio'),
             'id_barbero' => $request->integer('id_barbero'),

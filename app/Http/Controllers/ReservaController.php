@@ -25,12 +25,39 @@ class ReservaController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $isBarbero = $user->barbero()->exists();
-        
-        if ($isBarbero) {
-            // Vista para barberos: sus propias reservas
-            $barberoActual = $user->barbero;
-            $reservas = Reserva::where('id_barbero', $barberoActual->id_barbero)
+        $isPropietario = $user->is_propietario;
+        $isBarbero = $user->is_barbero;
+        $isCliente = $user->is_cliente;
+
+        // CLIENTE: Solo ve sus propias reservas
+        if ($isCliente) {
+            $cliente = $user->cliente;
+            if (!$cliente) {
+                return Inertia::render('Reservas/Index', [
+                    'reservas' => [],
+                    'isCliente' => true,
+                    'filters' => [],
+                    'message' => 'No tienes un perfil de cliente asociado',
+                ]);
+            }
+
+            $reservas = Reserva::where('id_cliente', $cliente->id_cliente)
+                ->with(['barbero.user:id,name', 'servicio:id_servicio,nombre,precio', 'pagos'])
+                ->orderByDesc('fecha_reserva')
+                ->get();
+
+            return Inertia::render('Reservas/Index', [
+                'reservas' => $reservas,
+                'isCliente' => true,
+                'clienteNombre' => $user->name,
+                'filters' => [],
+            ]);
+        }
+
+        // BARBERO: Solo ve sus propias reservas
+        if ($isBarbero && !$isPropietario) {
+            $barbero = $user->barbero;
+            $reservas = Reserva::where('id_barbero', $barbero->id_barbero)
                 ->with(['cliente.user:id,name', 'servicio:id_servicio,nombre,precio'])
                 ->orderByDesc('fecha_reserva')
                 ->get();
@@ -43,7 +70,7 @@ class ReservaController extends Controller
             ]);
         }
 
-        // Vista para administradores: todas las reservas
+        // PROPIETARIO: Ve todas las reservas con filtros
         $clienteId = $request->integer('cliente');
         $barberoId = $request->integer('barbero');
         $estado = $request->input('estado');
@@ -67,7 +94,7 @@ class ReservaController extends Controller
             'clientes' => $clientes,
             'barberos' => $barberos,
             'servicios' => $servicios,
-            'isBarbero' => false,
+            'isPropietario' => true,
             'filters' => [
                 'cliente' => $clienteId,
                 'barbero' => $barberoId,

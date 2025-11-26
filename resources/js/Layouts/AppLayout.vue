@@ -52,7 +52,7 @@ const isCliente = computed(() => user.value?.is_cliente || false)
 const sidebarOpen = ref(true)
 
 const links = computed(() => [
-    { key: 'dashboard', label: 'Dashboard', route: 'dashboard', roles: ['propietario', 'barbero', 'cliente'], icon: '🏠' },
+    { key: 'dashboard', label: 'Dashboard', route: 'dashboard', roles: ['propietario', 'barbero'], icon: '🏠' },
     { key: 'reportes', label: 'Reportes', route: 'reportes.index', roles: ['propietario'], icon: '📊' },
     { key: 'categorias', label: 'Categorías', route: 'categorias.index', roles: ['propietario'], icon: '📁' },
     { key: 'productos', label: 'Productos', route: 'productos.index', roles: ['propietario'], icon: '📦' },
@@ -60,9 +60,10 @@ const links = computed(() => [
     { key: 'barberos', label: 'Barberos', route: 'barberos.index', roles: ['propietario'], icon: '👤' },
     { key: 'clientes', label: 'Clientes', route: 'clientes.index', roles: ['propietario'], icon: '👥' },
     { key: 'horarios', label: 'Horarios', route: 'horarios.index', roles: ['propietario','barbero'], icon: '🕐' },
-    { key: 'reservas', label: 'Reservas', route: 'reservas.index', roles: ['propietario', 'barbero'], icon: '📅' },
-    { key: 'pagos', label: 'Pagos', route: 'pagos.index', roles: ['propietario'], icon: '💰' },
+    { key: 'reservas', label: 'Reservas', route: 'reservas.index', roles: ['propietario', 'barbero', 'cliente'], icon: '📅' },
+    { key: 'pagos', label: 'Pagos', route: 'pagos.index', roles: ['propietario', 'barbero', 'cliente'], icon: '💰' },
     { key: 'usuarios', label: 'Usuarios', route: 'usuarios.index', roles: ['propietario'], icon: '👨‍💼' },
+    { key: 'servicio-catalogo', label: 'Catálogo de Servicios', route: 'servicios.catalogo', roles: ['cliente'], icon: '📋' }
 ])
 
 const hasRole = (roles) => {
@@ -364,8 +365,8 @@ const visibleLinks = computed(() => links.value.filter(link => hasRole(link.role
                 </div>
             </header>
 
-            <!-- Page Content con Sidebar para admins -->
-            <div v-if="!isCliente" class="flex min-h-screen">
+            <!-- Page Content con Sidebar para todos los usuarios -->
+            <div class="flex min-h-screen">
                 <!-- Sidebar -->
                 <aside 
                     :class="['transition-all duration-300', sidebarOpen ? 'w-64' : 'w-16']" 
@@ -439,11 +440,6 @@ const visibleLinks = computed(() => links.value.filter(link => hasRole(link.role
                     </div>
                 </main>
             </div>
-
-            <!-- Page Content sin Sidebar para clientes -->
-            <main v-else>
-                <slot />
-            </main>
         </div>
     </div>
 </template>

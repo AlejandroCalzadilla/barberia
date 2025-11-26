@@ -84,16 +84,19 @@ Route::middleware([
         Route::resource('barberos', BarberoController::class);
         Route::resource('clientes', ClienteController::class);
         Route::resource('usuarios', UsuarioController::class);
-        Route::resource('pagos', PagoController::class);
         Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
     });
 
     // Rutas para propietario y barbero
     Route::middleware('role:propietario,barbero')->group(function () {
         Route::resource('horarios', HorarioController::class);
-        Route::resource('reservas', ReservaController::class);
         Route::get('/api/reservas/horarios-disponibles', [ReservaController::class, 'horariosDisponibles'])->name('reservas.horarios-disponibles');
-        
+    });
+
+    // Rutas para propietario, barbero y cliente (cada uno ve sus propios datos)
+    Route::middleware('role:propietario,barbero,cliente')->group(function () {
+        Route::resource('reservas', ReservaController::class);
+        Route::resource('pagos', PagoController::class);
     });
 
     // Rutas para todos (clientes también pueden pagar reservas)

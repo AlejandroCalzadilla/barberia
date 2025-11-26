@@ -46,7 +46,7 @@ class SocialAuthController extends Controller
                     ]);
                 }
             } else {
-                // Crear nuevo usuario
+                // Crear nuevo usuario con rol de cliente por defecto
                 $user = User::create([
                     'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'Usuario',
                     'email' => $socialUser->getEmail(),
@@ -54,6 +54,11 @@ class SocialAuthController extends Controller
                     'provider' => $provider,
                     'provider_id' => $socialUser->getId(),
                     'email_verified_at' => now(), // Auto-verificar email de OAuth
+                    'is_propietario' => false,
+                    'is_barbero' => false,
+                    'is_cliente' => true, // Por defecto es cliente
+                    'tipo_usuario' => 'cliente',
+                    'estado' => 'activo',
                 ]);
 
                 // Crear registro de Cliente asociado
@@ -67,16 +72,20 @@ class SocialAuthController extends Controller
             // Iniciar sesión
             Auth::login($user, true);
 
-            // Redirigir directamente según el rol sin pasar por verificación
-            if ($user->cliente) {
+            // Redirigir según el rol usando los campos booleanos
+            if ($user->is_cliente) {
                 return redirect()->route('servicios.catalogo');
             }
             
-            if ($user->barbero) {
+            if ($user->is_barbero) {
                 return redirect()->route('dashboard');
             }
             
-            // Admin u otros roles
+            if ($user->is_propietario) {
+                return redirect()->route('dashboard');
+            }
+            
+            // Fallback por si no tiene ningún rol asignado
             return redirect()->route('dashboard');
 
         } catch (\Exception $e) {

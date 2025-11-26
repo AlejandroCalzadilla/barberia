@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 
 class UsuarioController extends Controller
 {
@@ -24,7 +23,6 @@ class UsuarioController extends Controller
         $tipoFilter = $request->string('tipo');
 
         $usuarios = User::query()
-            ->with('roles:id,name')
             ->when($q, function ($query) use ($q) {
                 $query->where(function ($sub) use ($q) {
                     $sub->where('name', 'ilike', "%{$q}%")
@@ -48,10 +46,7 @@ class UsuarioController extends Controller
 
     public function create()
     {
-        $roles = Role::orderBy('name')->get(['id','name']);
-        return Inertia::render('Usuarios/Create', [
-            'roles' => $roles,
-        ]);
+        return Inertia::render('Usuarios/Create');
     }
 
     public function store(Request $request)
@@ -60,25 +55,50 @@ class UsuarioController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'nombre' => ['nullable', 'string', 'max:100'],
-            'apellido' => ['nullable', 'string', 'max:100'],
             'telefono' => ['nullable', 'string', 'max:20'],
             'direccion' => ['nullable', 'string', 'max:200'],
             'tipo_usuario' => ['required', 'in:propietario,barbero,cliente'],
             'estado' => ['nullable', 'in:activo,inactivo'],
-            'roles' => ['nullable', 'array'],
-            'roles.*' => ['exists:roles,id'],
+            // Campos para barbero
+            'especialidad' => ['nullable', 'string', 'max:255'],
+            'foto_perfil' => ['nullable', 'string'],
+            // Campos para cliente
+            'fecha_nacimiento' => ['nullable', 'date'],
+            'ci' => ['nullable', 'string', 'max:20'],
         ]);
 
         $data['password'] = Hash::make($data['password']);
         
-        $roles = $data['roles'] ?? [];
-        unset($data['roles']);
+        // Asignar roles booleanos
+        $data['is_propietario'] = $data['tipo_usuario'] === 'propietario';
+        $data['is_barbero'] = $data['tipo_usuario'] === 'barbero';
+        $data['is_cliente'] = $data['tipo_usuario'] === 'cliente';
+
+        // Extraer datos específicos
+        $barberoData = [
+            'especialidad' => $data['especialidad'] ?? null,
+            'foto_perfil' => $data['foto_perfil'] ?? null,
+            'estado' => 'disponible',
+        ];
+        
+        $clienteData = [
+            'fecha_nacimiento' => $data['fecha_nacimiento'] ?? null,
+            'ci' => $data['ci'] ?? null,
+        ];
+
+        // Limpiar campos extras del usuario
+        unset($data['especialidad'], $data['foto_perfil'], $data['fecha_nacimiento'], $data['ci']);
 
         $usuario = User::create($data);
 
-        if (!empty($roles)) {
-            $usuario->syncRoles($roles);
+        // Crear registro de barbero si aplica
+        if ($data['is_barbero'] && ($barberoData['especialidad'] || $barberoData['foto_perfil'])) {
+            $usuario->barbero()->create($barberoData);
+        }
+
+        // Crear registro de cliente si aplica
+        if ($data['is_cliente'] && ($clienteData['fecha_nacimiento'] || $clienteData['ci'])) {
+            $usuario->cliente()->create($clienteData);
         }
 
         return redirect()
@@ -88,11 +108,10 @@ class UsuarioController extends Controller
 
     public function edit(User $usuario)
     {
-        $roles = Role::orderBy('name')->get(['id','name']);
+        $usuario->load(['barbero', 'cliente']);
         
         return Inertia::render('Usuarios/Edit', [
-            'usuario' => $usuario->load('roles:id,name'),
-            'roles' => $roles,
+            'usuario' => $usuario,
         ]);
     }
 
@@ -102,14 +121,16 @@ class UsuarioController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $usuario->id],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'nombre' => ['nullable', 'string', 'max:100'],
-            'apellido' => ['nullable', 'string', 'max:100'],
             'telefono' => ['nullable', 'string', 'max:20'],
             'direccion' => ['nullable', 'string', 'max:200'],
             'tipo_usuario' => ['required', 'in:propietario,barbero,cliente'],
             'estado' => ['nullable', 'in:activo,inactivo'],
-            'roles' => ['nullable', 'array'],
-            'roles.*' => ['exists:roles,id'],
+            // Campos para barbero
+            'especialidad' => ['nullable', 'string', 'max:255'],
+            'foto_perfil' => ['nullable', 'string'],
+            // Campos para cliente
+            'fecha_nacimiento' => ['nullable', 'date'],
+            'ci' => ['nullable', 'string', 'max:20'],
         ]);
 
         if (empty($data['password'])) {
@@ -118,13 +139,48 @@ class UsuarioController extends Controller
             $data['password'] = Hash::make($data['password']);
         }
 
-        $roles = $data['roles'] ?? [];
-        unset($data['roles']);
+        // Asignar roles booleanos
+        $data['is_propietario'] = $data['tipo_usuario'] === 'propietario';
+        $data['is_barbero'] = $data['tipo_usuario'] === 'barbero';
+        $data['is_cliente'] = $data['tipo_usuario'] === 'cliente';
+
+        // Extraer datos específicos
+        $barberoData = [
+            'especialidad' => $data['especialidad'] ?? null,
+            'foto_perfil' => $data['foto_perfil'] ?? null,
+            'estado' => 'disponible',
+        ];
+        
+        $clienteData = [
+            'fecha_nacimiento' => $data['fecha_nacimiento'] ?? null,
+            'ci' => $data['ci'] ?? null,
+        ];
+
+        // Limpiar campos extras del usuario
+        unset($data['especialidad'], $data['foto_perfil'], $data['fecha_nacimiento'], $data['ci']);
 
         $usuario->update($data);
 
-        if (!empty($roles)) {
-            $usuario->syncRoles($roles);
+        // Actualizar o crear registro de barbero
+        if ($data['is_barbero']) {
+            $usuario->barbero()->updateOrCreate(
+                ['id_usuario' => $usuario->id],
+                $barberoData
+            );
+        } else {
+            // Eliminar barbero si cambió de tipo
+            $usuario->barbero()->delete();
+        }
+
+        // Actualizar o crear registro de cliente
+        if ($data['is_cliente']) {
+            $usuario->cliente()->updateOrCreate(
+                ['id_usuario' => $usuario->id],
+                $clienteData
+            );
+        } else {
+            // Eliminar cliente si cambió de tipo
+            $usuario->cliente()->delete();
         }
 
         return redirect()

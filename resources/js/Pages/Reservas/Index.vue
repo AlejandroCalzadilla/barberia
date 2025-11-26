@@ -12,14 +12,16 @@ const props = defineProps({
   servicios: Array,
   filters: Object,
   isBarbero: Boolean,
+  isCliente: Boolean,
   barberoNombre: String,
+  clienteNombre: String,
 })
 
 const cliente = ref(props.filters?.cliente || '')
 const barbero = ref(props.filters?.barbero || '')
 const estado = ref(props.filters?.estado || '')
 const fecha = ref(props.filters?.fecha || '')
-const { isPropietario, isBarbero: isUserBarbero } = useRoles()
+const { isPropietario, isBarbero: isUserBarbero, isCliente: isUserCliente } = useRoles()
 
 function search() {
   router.get(route('reservas.index'), { cliente: cliente.value, barbero: barbero.value, estado: estado.value, fecha: fecha.value }, { preserveState: true, replace: true })
@@ -33,11 +35,11 @@ function destroyItem(id) {
 </script>
 
 <template>
-  <AppLayout :title="isBarbero ? 'Mis Reservas' : 'Reservas'">
+  <AppLayout :title="isBarbero ? 'Mis Reservas' : isCliente ? 'Mis Reservas' : 'Reservas'">
     <template #header>
       <div class="flex items-center justify-between">
         <h2 class="font-semibold text-xl leading-tight" style="color: var(--color-neutral);">
-          {{ isBarbero ? 'Mis Reservas' : 'Reservas' }}
+          {{ isBarbero ? 'Mis Reservas' : isCliente ? 'Mis Reservas' : 'Reservas' }}
         </h2>
         <Link v-if="isPropietario && !isBarbero" :href="route('reservas.create')" 
               class="px-3 py-2 text-white rounded hover:opacity-90 transition" 
@@ -49,11 +51,12 @@ function destroyItem(id) {
 
     <div class="py-6">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <!-- Vista para barberos - Calendario -->
+        <!-- Vista para barberos y clientes - Calendario -->
         <ReservasCalendario 
-          v-if="isBarbero" 
+          v-if="isBarbero || isCliente" 
           :reservas="reservas"
           :barbero-nombre="barberoNombre"
+          :cliente-nombre="clienteNombre"
         />
 
         <!-- Vista para administradores - Tabla -->

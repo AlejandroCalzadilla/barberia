@@ -13,6 +13,8 @@ const form = useForm({
     email: '',
     password: '',
     password_confirmation: '',
+    fecha_nacimiento: '',
+    ci: '',
     terms: false,
 });
 
@@ -128,6 +130,29 @@ const submit = () => {
                     autocomplete="new-password"
                 />
                 <InputError class="mt-2" :message="form.errors.password_confirmation" />
+            </div>
+
+            <div class="mt-4">
+                <InputLabel for="fecha_nacimiento" value="Fecha de Nacimiento" />
+                <TextInput
+                    id="fecha_nacimiento"
+                    v-model="form.fecha_nacimiento"
+                    type="date"
+                    class="mt-1 block w-full"
+                />
+                <InputError class="mt-2" :message="form.errors.fecha_nacimiento" />
+            </div>
+
+            <div class="mt-4">
+                <InputLabel for="ci" value="CI (Cédula de Identidad)" />
+                <TextInput
+                    id="ci"
+                    v-model="form.ci"
+                    type="text"
+                    class="mt-1 block w-full"
+                    placeholder="1234567"
+                />
+                <InputError class="mt-2" :message="form.errors.ci" />
             </div>
 
             <div v-if="$page.props.jetstream.hasTermsAndPrivacyPolicyFeature" class="mt-4">

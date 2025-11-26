@@ -4,7 +4,11 @@ import { computed } from 'vue'
 const props = defineProps({
   reservas: Array,
   barberoNombre: String,
+  clienteNombre: String,
 })
+
+// Determinar si es vista de cliente o barbero
+const esVistaCliente = computed(() => !!props.clienteNombre)
 
 // Agrupar reservas por fecha
 const reservasPorFecha = computed(() => {
@@ -124,9 +128,14 @@ function formatoHora(hora) {
                 </span>
               </div>
 
-              <!-- Cliente -->
+              <!-- Cliente o Barbero según la vista -->
               <p class="text-sm" :style="{ color: 'var(--color-neutral)' }">
-                Cliente: <strong>{{ reserva.cliente.user.name }}</strong>
+                <template v-if="esVistaCliente">
+                  Barbero: <strong>{{ reserva.barbero?.user?.name || 'No asignado' }}</strong>
+                </template>
+                <template v-else>
+                  Cliente: <strong>{{ reserva.cliente?.user?.name || 'No asignado' }}</strong>
+                </template>
               </p>
 
               <!-- Notas si existen -->

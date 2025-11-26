@@ -39,17 +39,30 @@ class PagoFacilController extends Controller
 
     /**
      * Generar QR para pago de reserva
+     * Maneja tanto reservas nuevas como pagos finales pendientes
      */
     public function generarQR(Request $request)
     {
         try {
             Log::info('Inicio del método generarQR', ['request' => $request->all()]);
+            
+            $idPago = $request->integer('id_pago');
+            $esPagoFinal = $request->boolean('es_pago_final', false);
+            
+            // ESCENARIO 1: Pago final pendiente (ya existe reserva y pago)
+            if ($esPagoFinal && $idPago) {
+                return $this->generarQRPagoFinal($request, $idPago);
+            }
+            
+            // ESCENARIO 2: Nueva reserva desde catálogo (flujo original)
             $request->validate([
                 'id_servicio' => 'required|exists:servicio,id_servicio',
                 'id_barbero' => 'required|exists:barbero,id_barbero',
                 'fecha_reserva' => 'required|date',
                 'hora_inicio' => 'required|date_format:H:i',
-                'metodo_pago' => 'required|in:qr,tigo_money'
+                'metodo_pago' => 'required|in:qr,tigo_money',
+                'tipo_pago' => 'required|in:pago_completo,anticipo',
+                'monto' => 'required|numeric|min:0.01',
             ]);
             $servicio = Servicio::findOrFail($request->id_servicio);
             $barbero = Barbero::with('user')->findOrFail($request->id_barbero);
@@ -57,7 +70,16 @@ class PagoFacilController extends Controller
             if (!$cliente) {
                 return response()->json(['success' => false, 'message' => 'No tienes un perfil de cliente asociado'], 400);
             }
-            Log::info('Datos de reserva cargados', ['servicio' => $servicio->nombre, 'barbero' => $barbero->user->name]);
+            
+            $tipoPago = $request->input('tipo_pago'); // 'pago_completo' o 'anticipo'
+            $monto = $request->float('monto');
+            
+            Log::info('Datos de reserva cargados', [
+                'servicio' => $servicio->nombre, 
+                'barbero' => $barbero->user->name,
+                'tipo_pago' => $tipoPago,
+                'monto' => $monto
+            ]);
             // Obtener token de autenticación
             $tokenResponse = $this->obtenerToken();
             Log::info('Token obtenido', ['tokenResponse' => $tokenResponse]);
@@ -80,7 +102,7 @@ class PagoFacilController extends Controller
                 "phoneNumber" => (string)($request->telefono ?? "0"),
                 "email" => auth()->user()->email,
                 "paymentNumber" => $nroPago,
-                "amount" => (float)$servicio->precio,
+                "amount" => (float)$monto,
                 "currency" => 2, // BOB
                 "clientCode" => (string)auth()->user()->id,
                 "callbackUrl" => config('pagofacil.callback_url'),
@@ -145,22 +167,42 @@ class PagoFacilController extends Controller
                 'estado' => 'pendiente_pago',
             ]);
 
-            // Crear registro de pago pendiente
+            // Crear registro del pago actual (completo o anticipo)
             $pago = Pago::create([
                 'id_reserva' => $reserva->id_reserva,
-                'monto_total' => $servicio->precio,
+                'monto_total' => $monto,
                 'fecha_pago' => now(),
-                'metodo_pago' => 'transferencia', // PagoFácil es transferencia/QR
-                'tipo_pago' => 'pago_completo',
+                'metodo_pago' => 'transferencia',
+                'tipo_pago' => $tipoPago,
                 'estado' => 'pendiente',
-                'notas' => 'Pago QR PagoFácil - ' . $nroPago . ' - TransactionID: ' . $transactionId,
+                'notas' => "Pago QR PagoFácil - {$nroPago} - TransactionID: {$transactionId}",
             ]);
+
+            // Si es anticipo, crear el pago final pendiente
+            if ($tipoPago === 'anticipo') {
+                $montoFinal = $servicio->precio * 0.5;
+                Pago::create([
+                    'id_reserva' => $reserva->id_reserva,
+                    'monto_total' => $montoFinal,
+                    'fecha_pago' => now(),
+                    'metodo_pago' => 'transferencia',
+                    'tipo_pago' => 'pago_final',
+                    'estado' => 'pendiente',
+                    'notas' => 'Pago final pendiente (50% restante)',
+                ]);
+                
+                Log::info('Pago final creado', [
+                    'reserva_id' => $reserva->id_reserva,
+                    'monto_final' => $montoFinal
+                ]);
+            }
 
             Log::info('QR y transaction ID generados correctamente', [
                 'qrBase64' => substr($qrBase64, 0, 50) . '...',
                 'transactionId' => $transactionId,
                 'pago_id' => $pago->id_pago,
-                'reserva_id' => $reserva->id_reserva
+                'reserva_id' => $reserva->id_reserva,
+                'tipo_pago' => $tipoPago
             ]);
 
             return response()->json([
@@ -177,6 +219,125 @@ class PagoFacilController extends Controller
                 'line' => $th->getLine(),
                 'file' => $th->getFile(),
                 'trace' => $th->getTraceAsString()
+            ]);
+            return response()->json(['success' => false, 'message' => $th->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Generar QR para pago final pendiente (50% restante)
+     */
+    private function generarQRPagoFinal(Request $request, int $idPago)
+    {
+        try {
+            Log::info('Generando QR para pago final', ['id_pago' => $idPago]);
+            
+            $pago = Pago::with(['reserva.servicio', 'reserva.barbero.user', 'reserva.cliente.user'])
+                ->findOrFail($idPago);
+            
+            // Validaciones de seguridad
+            $cliente = auth()->user()->cliente;
+            if (!$cliente || $pago->reserva->cliente->id_usuario !== auth()->id()) {
+                return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
+            }
+            
+            if ($pago->estado !== 'pendiente' || $pago->tipo_pago !== 'pago_final') {
+                return response()->json(['success' => false, 'message' => 'Pago no disponible'], 400);
+            }
+            
+            $reserva = $pago->reserva;
+            $servicio = $reserva->servicio;
+            $barbero = $reserva->barbero;
+            
+            // Obtener token
+            $tokenResponse = $this->obtenerToken();
+            if (!isset($tokenResponse['values']['accessToken'])) {
+                Log::error('No se pudo obtener token', ['response' => $tokenResponse]);
+                return response()->json(['success' => false, 'message' => 'Error de autenticación'], 500);
+            }
+            
+            $accessToken = $tokenResponse['values']['accessToken'];
+            
+            // Preparar detalles del pago final
+            $horaFin = Carbon::parse($reserva->hora_inicio)->addMinutes($servicio->duracion_minutos)->format('H:i');
+            $pedidoDetalle = $this->formatearDetallesReserva(
+                $servicio, 
+                $barbero, 
+                $reserva->fecha_reserva, 
+                $reserva->hora_inicio, 
+                $horaFin
+            );
+            
+            $nroPago = "pago-final-{$pago->id_pago}-" . time();
+            
+            $body = [
+                "paymentMethod" => 4, // QR
+                "clientName" => auth()->user()->name,
+                "documentType" => 1,
+                "documentId" => (string)($request->ci_nit ?? "0"),
+                "phoneNumber" => (string)($request->telefono ?? "0"),
+                "email" => auth()->user()->email,
+                "paymentNumber" => $nroPago,
+                "amount" => (float)$pago->monto_total,
+                "currency" => 2, // BOB
+                "clientCode" => (string)auth()->user()->id,
+                "callbackUrl" => config('pagofacil.callback_url'),
+                "orderDetail" => $pedidoDetalle,
+            ];
+            
+            Log::info('Cuerpo de solicitud pago final', ['body' => $body]);
+            
+            $client = new Client();
+            $url = config('pagofacil.base_url') . '/generate-qr';
+            
+            $response = $client->post($url, [
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer ' . $accessToken
+                ],
+                'json' => $body
+            ]);
+            
+            $responseContent = $response->getBody()->getContents();
+            $result = json_decode($responseContent, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE || !isset($result['values'])) {
+                Log::error('Respuesta inválida', ['content' => $responseContent]);
+                return response()->json(['success' => false, 'message' => 'Error al generar QR'], 500);
+            }
+            
+            $values = $result['values'];
+            $qrBase64 = $values['qrBase64'] ?? null;
+            $transactionId = $values['transactionId'] ?? null;
+            
+            if (!$qrBase64 || !$transactionId) {
+                Log::error('Datos QR incompletos', ['values' => $values]);
+                return response()->json(['success' => false, 'message' => 'Error al obtener QR'], 500);
+            }
+            
+            // Actualizar notas del pago con el nro_pago y transactionId
+            $pago->update([
+                'notas' => "Pago Final QR - {$nroPago} - TransactionID: {$transactionId}"
+            ]);
+            
+            Log::info('QR pago final generado', [
+                'pago_id' => $pago->id_pago,
+                'transaction_id' => $transactionId
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'qr_image' => "data:image/png;base64," . $qrBase64,
+                'transaction_id' => $transactionId,
+                'nro_pago' => $nroPago,
+                'pago_id' => $pago->id_pago,
+                'reserva_id' => $reserva->id_reserva
+            ]);
+            
+        } catch (\Throwable $th) {
+            Log::error('Error en generarQRPagoFinal', [
+                'error' => $th->getMessage(),
+                'line' => $th->getLine()
             ]);
             return response()->json(['success' => false, 'message' => $th->getMessage()], 500);
         }
@@ -347,7 +508,15 @@ class PagoFacilController extends Controller
 
             // Si el pago fue completado, actualizar también el estado de la reserva
             if ($estadoInterno === 'pagado') {
+                // Para pago_final: actualizar la reserva a confirmada
+                // Para pago_completo: ya se actualiza en el flujo normal
                 $this->actualizarEstadoReserva($pago);
+                
+                Log::info('Reserva actualizada tras pago', [
+                    'pago_id' => $pago->id_pago,
+                    'tipo_pago' => $pago->tipo_pago,
+                    'reserva_id' => $pago->id_reserva
+                ]);
             }
 
             Log::info('Pago actualizado exitosamente desde callback', [

@@ -1,24 +1,27 @@
 <script setup>
 import { router, Link, useForm } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
-
-const props = defineProps({
-  roles: Array,
-})
+import { computed } from 'vue'
 
 const form = useForm({
   name: '',
   email: '',
   password: '',
   password_confirmation: '',
-  nombre: '',
-  apellido: '',
   telefono: '',
   direccion: '',
   tipo_usuario: 'cliente',
   estado: 'activo',
-  roles: [],
+  // Campos barbero
+  especialidad: '',
+  foto_perfil: '',
+  // Campos cliente
+  fecha_nacimiento: '',
+  ci: '',
 })
+
+const mostrarCamposBarbero = computed(() => form.tipo_usuario === 'barbero')
+const mostrarCamposCliente = computed(() => form.tipo_usuario === 'cliente')
 
 function submit() {
   form.post(route('usuarios.store'))
@@ -99,30 +102,6 @@ function submit() {
           </div>
 
           <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Nombre</label>
-            <input 
-              v-model="form.nombre" 
-              type="text" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
-              :style="{'--tw-ring-color': 'var(--color-primary)'}"
-            />
-            <div v-if="form.errors.nombre" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.nombre }}</div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Apellido</label>
-            <input 
-              v-model="form.apellido" 
-              type="text" 
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-              style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
-              :style="{'--tw-ring-color': 'var(--color-primary)'}"
-            />
-            <div v-if="form.errors.apellido" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.apellido }}</div>
-          </div>
-
-          <div>
             <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Teléfono</label>
             <input 
               v-model="form.telefono" 
@@ -177,22 +156,70 @@ function submit() {
             <div v-if="form.errors.estado" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.estado }}</div>
           </div>
 
-          <div class="md:col-span-2">
-            <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Roles</label>
-            <div class="grid md:grid-cols-3 gap-2 mt-2">
-              <label v-for="role in roles" :key="role.id" class="flex items-center space-x-2">
-                <input 
-                  type="checkbox" 
-                  :value="role.id" 
-                  v-model="form.roles"
-                  class="rounded focus:ring-2"
-                  :style="{'--tw-ring-color': 'var(--color-primary)'}"
-                />
-                <span style="color: var(--color-neutral);">{{ role.name }}</span>
-              </label>
+          <!-- Campos específicos para Barbero -->
+          <template v-if="mostrarCamposBarbero">
+            <div class="md:col-span-2">
+              <h3 class="font-semibold mb-4 mt-4" style="color: var(--color-neutral);">🔧 Datos de Barbero</h3>
             </div>
-            <div v-if="form.errors.roles" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.roles }}</div>
-          </div>
+
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Especialidad</label>
+              <textarea 
+                v-model="form.especialidad" 
+                rows="2"
+                class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
+                style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+                :style="{'--tw-ring-color': 'var(--color-primary)'}"
+                placeholder="Ej: Cortes clásicos y afeitados tradicionales"
+              />
+              <div v-if="form.errors.especialidad" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.especialidad }}</div>
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">URL Foto de perfil</label>
+              <input 
+                v-model="form.foto_perfil" 
+                type="text" 
+                class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
+                style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+                :style="{'--tw-ring-color': 'var(--color-primary)'}"
+                placeholder="https://example.com/foto.jpg"
+              />
+              <div v-if="form.errors.foto_perfil" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.foto_perfil }}</div>
+            </div>
+          </template>
+
+          <!-- Campos específicos para Cliente -->
+          <template v-if="mostrarCamposCliente">
+            <div class="md:col-span-2">
+              <h3 class="font-semibold mb-4 mt-4" style="color: var(--color-neutral);">👤 Datos de Cliente</h3>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Fecha de nacimiento</label>
+              <input 
+                v-model="form.fecha_nacimiento" 
+                type="date" 
+                class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
+                style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+                :style="{'--tw-ring-color': 'var(--color-primary)'}"
+              />
+              <div v-if="form.errors.fecha_nacimiento" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.fecha_nacimiento }}</div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">CI (Cédula de Identidad)</label>
+              <input 
+                v-model="form.ci" 
+                type="text" 
+                class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
+                style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+                :style="{'--tw-ring-color': 'var(--color-primary)'}"
+                placeholder="12345678"
+              />
+              <div v-if="form.errors.ci" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.ci }}</div>
+            </div>
+          </template>
 
           <div class="md:col-span-2 flex gap-2 mt-4">
             <button 

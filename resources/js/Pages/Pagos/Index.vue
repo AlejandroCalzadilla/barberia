@@ -28,7 +28,7 @@ const tipo = ref(props.filters?.tipo || '')
 const fecha = ref(props.filters?.fecha || '')
 const searchQuery = ref(props.filters?.search || '')
 
-const { isPropietario, isBarbero } = useRoles()
+const { isPropietario, isBarbero, isCliente } = useRoles()
 
 const filteredReservas = computed(() => {
   if (!searchQuery.value) return props.reservas.slice(0, 5)
@@ -300,6 +300,20 @@ function getTipoPagoLabel(tipo) {
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div class="flex items-center justify-end space-x-2">
+                      <!-- Botón Pagar para clientes con pagos pendientes tipo pago_final -->
+                      <Link 
+                        v-if="isCliente && p.estado === 'pendiente' && p.tipo_pago === 'pago_final' && p.reserva" 
+                        :href="route('pagos.pagar-reserva', { 
+                          id_pago: p.id_pago,
+                          id_reserva: p.id_reserva
+                        })" 
+                        class="px-3 py-1 rounded text-white hover:opacity-90 transition font-medium"
+                        title="Pagar ahora"
+                        :style="{ backgroundColor: 'var(--color-success)' }"
+                      >
+                        💳 Pagar
+                      </Link>
+                      
                       <Link 
                         v-if="isPropietario || isBarbero" 
                         :href="route('pagos.edit', p.id_pago)" 

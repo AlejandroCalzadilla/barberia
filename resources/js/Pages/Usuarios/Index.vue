@@ -72,7 +72,7 @@ function eliminar(id) {
                   <th class="px-3 py-2 text-left text-xs font-medium uppercase" style="color: var(--color-base);">Email</th>
                   <th class="px-3 py-2 text-left text-xs font-medium uppercase" style="color: var(--color-base);">Teléfono</th>
                   <th class="px-3 py-2 text-left text-xs font-medium uppercase" style="color: var(--color-base);">Tipo</th>
-                  <th class="px-3 py-2 text-left text-xs font-medium uppercase" style="color: var(--color-base);">Roles</th>
+                 
                   <th class="px-3 py-2 text-left text-xs font-medium uppercase" style="color: var(--color-base);">Estado</th>
                   <th class="px-3 py-2 text-left text-xs font-medium uppercase" style="color: var(--color-base);">Acciones</th>
                 </tr>
@@ -90,12 +90,7 @@ function eliminar(id) {
                       {{ u.tipo_usuario }}
                     </span>
                   </td>
-                  <td class="px-3 py-2 whitespace-nowrap" style="color: var(--color-neutral);">
-                    <span v-for="role in u.roles" :key="role.id" class="inline-block px-2 py-1 mr-1 rounded text-xs" style="background-color: var(--color-accent); color: white;">
-                      {{ role.name }}
-                    </span>
-                    <span v-if="!u.roles || u.roles.length === 0" style="opacity: 0.5;">Sin roles</span>
-                  </td>
+                
                   <td class="px-3 py-2 whitespace-nowrap">
                     <span class="px-2 py-1 rounded text-xs" :style="{
                       'background-color': u.estado === 'activo' ? 'var(--color-success)' : 'var(--color-error)',
