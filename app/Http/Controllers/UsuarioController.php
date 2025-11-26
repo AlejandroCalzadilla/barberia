@@ -61,7 +61,7 @@ class UsuarioController extends Controller
             'estado' => ['nullable', 'in:activo,inactivo'],
             // Campos para barbero
             'especialidad' => ['nullable', 'string', 'max:255'],
-            'foto_perfil' => ['nullable', 'string'],
+            'foto_perfil' => ['nullable', 'image', 'max:2048'],
             // Campos para cliente
             'fecha_nacimiento' => ['nullable', 'date'],
             'ci' => ['nullable', 'string', 'max:20'],
@@ -74,10 +74,16 @@ class UsuarioController extends Controller
         $data['is_barbero'] = $data['tipo_usuario'] === 'barbero';
         $data['is_cliente'] = $data['tipo_usuario'] === 'cliente';
 
+        // Manejar foto de perfil si se subió
+        $fotoPerfilPath = null;
+        if ($request->hasFile('foto_perfil')) {
+            $fotoPerfilPath = $request->file('foto_perfil')->store('barberos', 'public');
+        }
+
         // Extraer datos específicos
         $barberoData = [
             'especialidad' => $data['especialidad'] ?? null,
-            'foto_perfil' => $data['foto_perfil'] ?? null,
+            'foto_perfil' => $fotoPerfilPath,
             'estado' => 'disponible',
         ];
         
@@ -127,11 +133,18 @@ class UsuarioController extends Controller
             'estado' => ['nullable', 'in:activo,inactivo'],
             // Campos para barbero
             'especialidad' => ['nullable', 'string', 'max:255'],
-            'foto_perfil' => ['nullable', 'string'],
+            'foto_perfil' => ['nullable', 'image', 'max:2048'],
             // Campos para cliente
             'fecha_nacimiento' => ['nullable', 'date'],
             'ci' => ['nullable', 'string', 'max:20'],
         ]);
+
+        // Limpiar campos vacíos que vienen como string vacío desde FormData
+        foreach ($data as $key => $value) {
+            if ($value === '' && !in_array($key, ['password', 'password_confirmation'])) {
+                $data[$key] = null;
+            }
+        }
 
         if (empty($data['password'])) {
             unset($data['password']);
@@ -144,10 +157,19 @@ class UsuarioController extends Controller
         $data['is_barbero'] = $data['tipo_usuario'] === 'barbero';
         $data['is_cliente'] = $data['tipo_usuario'] === 'cliente';
 
+        // Manejar foto de perfil si se subió una nueva
+        $fotoPerfilPath = null;
+        if ($request->hasFile('foto_perfil')) {
+            $fotoPerfilPath = $request->file('foto_perfil')->store('barberos', 'public');
+        } else {
+            // Mantener la foto anterior si existe
+            $fotoPerfilPath = $usuario->barbero?->foto_perfil;
+        }
+
         // Extraer datos específicos
         $barberoData = [
             'especialidad' => $data['especialidad'] ?? null,
-            'foto_perfil' => $data['foto_perfil'] ?? null,
+            'foto_perfil' => $fotoPerfilPath,
             'estado' => 'disponible',
         ];
         

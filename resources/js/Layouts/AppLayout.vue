@@ -9,6 +9,7 @@ import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import ThemeSelector from '@/Components/ThemeSelector.vue';
 import SearchBar from '@/Components/SearchBar.vue';
+import PageViewCounter from '@/Components/PageViewCounter.vue';
 import { useTheme } from '@/composables/useTheme.js';
 
 defineProps({
@@ -54,11 +55,12 @@ const sidebarOpen = ref(true)
 const links = computed(() => [
     { key: 'dashboard', label: 'Dashboard', route: 'dashboard', roles: ['propietario', 'barbero'], icon: '🏠' },
     { key: 'reportes', label: 'Reportes', route: 'reportes.index', roles: ['propietario'], icon: '📊' },
+    { key: 'estadisticas-visitas', label: 'Estadísticas de Visitas', route: 'estadisticas.visitas', roles: ['propietario'], icon: '👁️' },
     { key: 'categorias', label: 'Categorías', route: 'categorias.index', roles: ['propietario'], icon: '📁' },
     { key: 'productos', label: 'Productos', route: 'productos.index', roles: ['propietario'], icon: '📦' },
     { key: 'servicios', label: 'Servicios', route: 'servicios.index', roles: ['propietario'], icon: '✂️' },
-    { key: 'barberos', label: 'Barberos', route: 'barberos.index', roles: ['propietario'], icon: '👤' },
-    { key: 'clientes', label: 'Clientes', route: 'clientes.index', roles: ['propietario'], icon: '👥' },
+    //{ key: 'barberos', label: 'Barberos', route: 'barberos.index', roles: ['propietario'], icon: '👤' },
+   // { key: 'clientes', label: 'Clientes', route: 'clientes.index', roles: ['propietario'], icon: '👥' },
     { key: 'horarios', label: 'Horarios', route: 'horarios.index', roles: ['propietario','barbero'], icon: '🕐' },
     { key: 'reservas', label: 'Reservas', route: 'reservas.index', roles: ['propietario', 'barbero', 'cliente'], icon: '📅' },
     { key: 'pagos', label: 'Pagos', route: 'pagos.index', roles: ['propietario', 'barbero', 'cliente'], icon: '💰' },
@@ -438,6 +440,9 @@ const visibleLinks = computed(() => links.value.filter(link => hasRole(link.role
                     <div :style="{ position: 'relative', zIndex: 10 }">
                         <slot />
                     </div>
+
+                    <!-- Contador de visitas (esquina inferior derecha) -->
+                    <PageViewCounter position="bottom-right" />
                 </main>
             </div>
         </div>

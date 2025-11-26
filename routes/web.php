@@ -85,6 +85,11 @@ Route::middleware([
         Route::resource('clientes', ClienteController::class);
         Route::resource('usuarios', UsuarioController::class);
         Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+        
+        // Estadísticas de visitas (solo propietario)
+        Route::get('/estadisticas/visitas', function () {
+            return Inertia::render('Estadisticas/PageViews');
+        })->name('estadisticas.visitas');
     });
 
     // Rutas para propietario y barbero

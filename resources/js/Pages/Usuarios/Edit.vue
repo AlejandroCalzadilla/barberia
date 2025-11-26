@@ -1,13 +1,20 @@
 <script setup>
 import { router, Link, useForm } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   usuario: Object,
 })
 
+const previewImage = ref(
+  props.usuario.barbero?.foto_perfil 
+    ? `/storage/${props.usuario.barbero.foto_perfil}` 
+    : null
+)
+
 const form = useForm({
+  _method: 'PUT',
   name: props.usuario.name ?? '',
   email: props.usuario.email ?? '',
   password: '',
@@ -18,7 +25,7 @@ const form = useForm({
   estado: props.usuario.estado ?? 'activo',
   // Campos para barbero
   especialidad: props.usuario.barbero?.especialidad ?? '',
-  foto_perfil: props.usuario.barbero?.foto_perfil ?? '',
+  foto_perfil: null,
   // Campos para cliente
   fecha_nacimiento: props.usuario.cliente?.fecha_nacimiento ?? '',
   ci: props.usuario.cliente?.ci ?? '',
@@ -27,8 +34,22 @@ const form = useForm({
 const mostrarCamposBarbero = computed(() => form.tipo_usuario === 'barbero')
 const mostrarCamposCliente = computed(() => form.tipo_usuario === 'cliente')
 
+function handleImageChange(event) {
+  const file = event.target.files[0]
+  if (file) {
+    form.foto_perfil = file
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      previewImage.value = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
 function submit() {
-  form.put(route('usuarios.update', props.usuario.id))
+  form.post(route('usuarios.update', props.usuario.id), {
+    forceFormData: true
+  })
 }
 </script>
 
@@ -182,16 +203,19 @@ function submit() {
             </div>
 
             <div class="md:col-span-2">
-              <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">URL Foto de Perfil</label>
+              <label class="block text-sm font-medium mb-1" style="color: var(--color-neutral);">Foto de perfil</label>
               <input 
-                v-model="form.foto_perfil" 
-                type="text"
-                placeholder="https://ejemplo.com/foto.jpg"
+                type="file" 
+                accept="image/*" 
+                @change="handleImageChange"
                 class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 transition"
-                style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral); opacity: 0.5;"
+                style="background-color: var(--color-base); border-color: var(--color-neutral); color: var(--color-neutral);"
                 :style="{'--tw-ring-color': 'var(--color-primary)'}"
               />
               <div v-if="form.errors.foto_perfil" class="text-sm mt-1" style="color: var(--color-error);">{{ form.errors.foto_perfil }}</div>
+              <div v-if="previewImage" class="mt-3">
+                <img :src="previewImage" alt="Preview" class="w-full h-auto rounded max-w-xs" />
+              </div>
             </div>
           </template>
 
